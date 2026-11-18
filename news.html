@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT News - 최신 기술 뉴스 & AI 큐레이터</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            950: '#070a13',
+                            900: '#0f172a',
+                            850: '#1e293b',
+                            800: '#334155'
+                        },
+                        brand: {
+                            500: '#0284c7',
+                            accent: '#38bdf8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Pretendard', sans-serif; }
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+        @keyframes ping-slow {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        @keyframes flow-packet {
+            0% { left: 0%; opacity: 0; transform: translateY(-50%) scale(0.6); }
+            15% { opacity: 1; transform: translateY(-50%) scale(1.1); }
+            85% { opacity: 1; transform: translateY(-50%) scale(1.1); }
+            100% { left: 100%; opacity: 0; transform: translateY(-50%) scale(0.6); }
+        }
+        @keyframes pulse-node {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+            50% { transform: scale(1.06); box-shadow: 0 0 18px 4px rgba(56, 189, 248, 0.6); }
+        }
+        .step-active {
+            border-color: #38bdf8 !important;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.4) !important;
+            transform: translateY(-4px) scale(1.02);
+        }
+        .step-pulse {
+            animation: ping-slow 2s infinite ease-in-out;
+        }
+        .anim-packet {
+            animation: flow-packet 2.8s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .active-glow {
+            animation: pulse-node 1.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-dark-950 text-slate-100 min-h-screen flex flex-col selection:bg-brand-accent selection:text-dark-950">
+
+    <!-- 상단 네비게이션 헤더 -->
+    <header class="border-b border-dark-850 bg-dark-900/80 backdrop-blur sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-accent flex items-center justify-center font-bold text-lg text-white shadow-lg shadow-sky-500/20">
+                    📰
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                        IT News <span class="text-[11px] px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">뉴스 원문 & Gemini 브리핑</span>
+                    </h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="toggle-flow-btn" class="text-xs px-3 py-1.5 rounded-xl bg-dark-850 hover:bg-dark-800 text-sky-400 border border-dark-800 hover:border-sky-500/30 font-medium transition flex items-center gap-1.5 shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>API 동작 구조 보기</span>
+                </button>
+                <span class="text-xs text-slate-400 hidden sm:inline">실시간 테크 뉴스 & AI 큐레이션</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 상단 검색 영역 -->
+    <div class="border-b border-dark-850/60 bg-dark-900/40 py-8 px-4 sm:px-6">
+        <div class="max-w-5xl mx-auto space-y-4 text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold">
+                <span>⚡ 뉴스 원문 탐색 및 AI 분석</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                궁금한 <span class="text-sky-400">IT 기술·뉴스 주제</span>를 검색하세요
+            </h2>
+            
+            <!-- 검색 입력바 -->
+            <div class="max-w-3xl mx-auto relative flex items-center pt-2">
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="예: 생성형 AI, 클라우드 쿠버네티스, 리눅스 보안, 양자 컴퓨팅..." 
+                    class="w-full bg-dark-950 border border-dark-800 rounded-2xl pl-12 pr-28 py-3.5 text-sm sm:text-base text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition shadow-inner"
+                >
+                <svg class="w-5 h-5 text-slate-400 absolute left-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <button 
+                    type="button" 
+                    id="search-button"
+                    class="absolute right-2 bg-brand-500 hover:bg-sky-500 text-white font-semibold px-5 py-2 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    검색하기
+                </button>
+            </div>
+
+            <!-- 추천 키워드 태그 -->
+            <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+                <span class="text-xs text-slate-500 font-medium mr-1">추천 검색어:</span>
+                <span class="tag-btn px-3 py-1 rounded-lg bg-dark-850 text-slate-300 hover:text-white border border-dark-800 text-xs cursor-pointer transition"># 인공지능 (AI)</span>
+                <span class="tag-btn px-3 py-1 rounded-lg bg-dark-850 text-slate-300 hover:text-white border border-dark-800 text-xs cursor-pointer transition"># AWS 클라우드</span>
+                <span class="tag-btn px-3 py-1 rounded-lg bg-dark-850 text-slate-300 hover:text-white border border-dark-800 text-xs cursor-pointer transition"># 리눅스 커널</span>
+                <span class="tag-btn px-3 py-1 rounded-lg bg-dark-850 text-slate-300 hover:text-white border border-dark-800 text-xs cursor-pointer transition"># 사이버 보안</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 2단 레이아웃 컨테이너 -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
+
+        <!-- [시각화 섹션] 시스템 및 API 동작 흐름 가이드 -->
+        <section id="workflow-panel" class="border border-sky-500/30 bg-gradient-to-b from-dark-900/95 to-dark-950/95 rounded-2xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+            <!-- 상단 헤더 -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-dark-850 gap-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center text-white text-lg font-bold shadow-md shadow-sky-500/20">
+                        ⚡
+                    </div>
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                            초간단 4단계 동작 원리
+                            <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">단어 하나만 치면 끝!</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">개발 지식 없이도 바로 이해하는 '스마트 AI 뉴스 배달' 이야기</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 self-start sm:self-auto">
+                    <button id="demo-play-btn" class="text-xs px-3.5 py-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-white font-bold transition flex items-center gap-1.5 shadow-md shadow-sky-500/20 active:scale-95">
+                        <span>▶️</span>
+                        <span>1~4단계 만화처럼 보기 (재생)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 비유 설명 박스 (가장 먼저 읽히는 곳) -->
+            <div class="mt-4 p-4 rounded-xl bg-sky-950/30 border border-sky-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-300">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl p-1.5 rounded-lg bg-sky-500/20 flex-shrink-0">☕</span>
+                    <div>
+                        <strong class="text-white block sm:inline font-bold">"카페에서 커피 주문하듯 생각해보세요!"</strong>
+                        <span class="text-slate-300 ml-0 sm:ml-1 text-xs">
+                            손님(사용자)이 메뉴를 말하면 ➡️ 직원이 원두(뉴스)를 가져와 ➡️ 바리스타(AI)가 맛있게 내려서 ➡️ 테이블(화면)에 차려줍니다.
+                        </span>
+                    </div>
+                </div>
+                <span class="text-[11px] text-sky-400 bg-dark-950 px-2 py-1 rounded-md border border-dark-800 whitespace-nowrap self-end sm:self-auto font-medium">
+                    소요시간: 단 1~2초
+                </span>
+            </div>
+
+            <!-- [시각적 애니메이션] 데이터 패킷 배달 트랙 -->
+            <div class="mt-4 p-4 rounded-2xl bg-dark-950/90 border border-dark-800 relative overflow-hidden shadow-inner">
+                <div class="text-[11px] font-semibold text-slate-400 mb-3 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        실시간 배달 트랙: 패킷이 파이프를 타고 이동합니다
+                    </span>
+                    <span class="text-slate-500 font-mono text-[10px]" id="anim-stream-status">배달 중: ON</span>
+                </div>
+
+                <!-- 4개 노드와 연결선 -->
+                <div class="relative py-4 px-2 sm:px-6">
+                    <!-- 기본 연결선 트랙 -->
+                    <div class="absolute top-1/2 left-6 right-6 h-1 bg-dark-800 -translate-y-1/2 z-0 rounded-full"></div>
+                    <!-- 빛나는 데이터 전송 파이프 효과 -->
+                    <div class="absolute top-1/2 left-6 right-6 h-0.5 bg-gradient-to-r from-sky-500 via-purple-500 to-emerald-500 -translate-y-1/2 z-0 opacity-50"></div>
+                    
+                    <!-- 이동하는 패킷 엘리먼트 -->
+                    <div id="flow-particle" class="anim-packet absolute top-1/2 -translate-y-1/2 z-10 pointer-events-none flex items-center gap-1">
+                        <div class="w-4 h-4 rounded-full bg-sky-400 shadow-[0_0_15px_#38bdf8] flex items-center justify-center text-[9px] font-bold text-dark-950">
+                            📦
+                        </div>
+                        <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-500 text-white shadow-md backdrop-blur whitespace-nowrap font-sans" id="packet-label">
+                            검색어 주문서 배달 중
+                        </span>
+                    </div>
+
+                    <!-- 4개 핵심 노드 아이콘 -->
+                    <div class="relative z-10 flex items-center justify-between">
+                        <!-- 노드 1 -->
+                        <div id="pipe-node-1" class="flex flex-col items-center gap-1.5 cursor-pointer" onclick="simulateStep(1)">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-dark-900 border-2 border-sky-500 flex items-center justify-center text-base sm:text-lg shadow-lg transition-transform duration-300 hover:scale-110">
+                                🙋‍♂️
+                            </div>
+                            <span class="text-[11px] font-bold text-sky-400">1. 질문하기</span>
+                        </div>
+
+                        <!-- 노드 2 -->
+                        <div id="pipe-node-2" class="flex flex-col items-center gap-1.5 cursor-pointer" onclick="simulateStep(2)">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-dark-900 border-2 border-indigo-500 flex items-center justify-center text-base sm:text-lg shadow-lg transition-transform duration-300 hover:scale-110">
+                                📰
+                            </div>
+                            <span class="text-[11px] font-bold text-indigo-400">2. 뉴스 찾기</span>
+                        </div>
+
+                        <!-- 노드 3 -->
+                        <div id="pipe-node-3" class="flex flex-col items-center gap-1.5 cursor-pointer" onclick="simulateStep(3)">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-dark-900 border-2 border-purple-500 flex items-center justify-center text-base sm:text-lg shadow-lg transition-transform duration-300 hover:scale-110">
+                                🧠
+                            </div>
+                            <span class="text-[11px] font-bold text-purple-400">3. AI가 읽고 요약</span>
+                        </div>
+
+                        <!-- 노드 4 -->
+                        <div id="pipe-node-4" class="flex flex-col items-center gap-1.5 cursor-pointer" onclick="simulateStep(4)">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-dark-900 border-2 border-emerald-500 flex items-center justify-center text-base sm:text-lg shadow-lg transition-transform duration-300 hover:scale-110">
+                                🎁
+                            </div>
+                            <span class="text-[11px] font-bold text-emerald-400">4. 예쁘게 보여주기</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 흐름 화살표가 있는 4단계 인터랙티브 시각화 -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 pt-4 relative">
+                
+                <!-- 1단계: 사용자 검색 -->
+                <div id="step-card-1" onclick="simulateStep(1)" class="step-card cursor-pointer relative bg-dark-900/90 border border-sky-500/40 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:border-sky-400 transition-all duration-300 group">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 text-[11px] font-bold">
+                                1단계 · 손님의 주문
+                            </span>
+                            <span class="text-2xl group-hover:scale-125 transition-transform duration-300">🙋‍♂️</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white group-hover:text-sky-300 transition-colors">궁금한 단어 검색</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            <span class="text-sky-300 font-semibold">'인공지능'</span>, <span class="text-sky-300 font-semibold">'보안'</span>처럼 알고 싶은 단어를 넣고 엔터만 누르면 끝납니다.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-dark-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+                        <span>하는 일:</span>
+                        <span class="text-sky-300 font-medium">검색어 주문서 발송</span>
+                    </div>
+                </div>
+
+                <!-- 2단계: 실시간 뉴스 크롤링 -->
+                <div id="step-card-2" onclick="simulateStep(2)" class="step-card cursor-pointer relative bg-dark-900/90 border border-indigo-500/40 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:border-indigo-400 transition-all duration-300 group">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[11px] font-bold">
+                                2단계 · 신문 가져오기
+                            </span>
+                            <span class="text-2xl group-hover:scale-125 transition-transform duration-300">📰</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">최신 기사 5개 수집</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            컴퓨터가 구글 뉴스 가판대로 뛰어가서 방금 발행된 <strong class="text-indigo-300 font-medium">가장 따끈따끈한 뉴스 5개</strong>를 찾아옵니다.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-dark-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+                        <span>가져온 것:</span>
+                        <span class="text-indigo-300 font-medium">실제 뉴스 기사 5건</span>
+                    </div>
+                </div>
+
+                <!-- 3단계: Gemini AI 분석 -->
+                <div id="step-card-3" onclick="simulateStep(3)" class="step-card cursor-pointer relative bg-dark-900/90 border border-purple-500/40 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:border-purple-400 transition-all duration-300 group">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 text-[11px] font-bold">
+                                3단계 · AI 비서 요약
+                            </span>
+                            <span class="text-2xl group-hover:scale-125 transition-transform duration-300">🧠</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white group-hover:text-purple-300 transition-colors">AI가 읽고 3줄 정리</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            바쁜 여러분을 위해 똑똑한 AI 비서(Gemini)가 5개 신문을 1초 만에 다 읽고, <span class="text-purple-300 font-medium font-semibold">핵심 내용만 쏙쏙 요약</span>합니다.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-dark-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+                        <span>담당 비서:</span>
+                        <span class="text-purple-300 font-medium">Google Gemini AI</span>
+                    </div>
+                </div>
+
+                <!-- 4단계: 화면 전달 및 안전망 -->
+                <div id="step-card-4" onclick="simulateStep(4)" class="step-card cursor-pointer relative bg-dark-900/90 border border-emerald-500/40 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:border-emerald-400 transition-all duration-300 group">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[11px] font-bold">
+                                4단계 · 밥상 차리기
+                            </span>
+                            <span class="text-2xl group-hover:scale-125 transition-transform duration-300">🎁</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">한눈에 보기 쉽게 완성!</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            <strong class="text-emerald-300 font-medium">왼쪽엔 원문 뉴스</strong>, <strong class="text-emerald-300 font-medium">오른쪽엔 AI의 3줄 요약</strong>을 깔끔하게 나란히 차려줍니다.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-dark-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+                        <span>결과:</span>
+                        <span class="text-emerald-300 font-medium">뉴스 원문 + AI 요약</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 실시간 동적 동작 애니메이션 콘솔 모니터 -->
+            <div id="live-action-box" class="mt-4 p-4 rounded-xl bg-dark-950 border border-sky-500/30 text-xs space-y-2 transition-all duration-300">
+                <div class="flex items-center justify-between border-b border-dark-850 pb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="font-bold text-slate-200" id="live-action-title">💡 지금 무슨 일이 일어나고 있나요?</span>
+                    </div>
+                    <span class="text-[11px] text-slate-400 font-medium" id="live-action-tag">준비 완료</span>
+                </div>
+                <div class="flex items-center gap-3 pt-1">
+                    <div id="live-action-icon" class="w-9 h-9 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center text-lg flex-shrink-0">
+                        👆
+                    </div>
+                    <p id="live-action-desc" class="text-slate-300 leading-relaxed font-sans text-xs sm:text-sm">
+                        위의 <strong class="text-sky-300">1~4단계 카드</strong>를 아무거나 콕 눌러보세요! 데이터가 어떻게 만들어지고 배달되는지 친절하게 알려드립니다.
+                    </p>
+                </div>
+            </div>
+                <div class="flex items-center justify-between border-b border-dark-850 pb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="font-bold text-slate-200" id="live-action-title">인터랙티브 시뮬레이션 콘솔</span>
+                    </div>
+                    <span class="text-[11px] text-slate-500 font-mono" id="live-action-tag">READY</span>
+                </div>
+                <div class="flex items-center gap-3 pt-1">
+                    <div id="live-action-icon" class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center text-base flex-shrink-0">
+                        👆
+                    </div>
+                    <p id="live-action-desc" class="text-slate-300 leading-relaxed font-sans">
+                        위 1~4단계 카드를 클릭하시거나 <strong class="text-sky-300 font-medium">[1~4단계 연속 시뮬레이션]</strong> 버튼을 누르면 데이터가 실제로 서버 내부에서 어떻게 흘러가는지 실시간으로 시연됩니다.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 하단 간편 요약 배너 -->
+            <div class="mt-5 p-3 rounded-xl bg-dark-950/70 border border-dark-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+                <div class="flex items-center gap-2">
+                    <span class="text-amber-400 font-bold">💡 쉬운 비유:</span>
+                    <span>"사용자가 주문(검색)하면, 서버가 신선한 신문(RSS)을 사와서, AI 비서(Gemini)가 읽고 핵심만 브리핑해 주는 시스템입니다."</span>
+                </div>
+                <div class="text-[11px] text-slate-500 font-mono">
+                    평균 소요 시간: 약 1~2초
+                </div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- [왼쪽 영역] 검색된 뉴스 원문 목록 (5칸/12) -->
+            <aside class="lg:col-span-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-dark-850 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">📄</span>
+                        <h3 class="text-sm font-bold text-slate-200 tracking-tight" id="news-section-title">검색된 뉴스 원문</h3>
+                    </div>
+                    <span id="news-count" class="text-xs px-2 py-0.5 rounded-full bg-dark-850 text-slate-400">0건</span>
+                </div>
+
+                <!-- 뉴스 기사 카드 리스트 -->
+                <div id="news-list" class="space-y-3">
+                    <div class="border border-dark-850 rounded-2xl p-6 text-center bg-dark-900/40 text-slate-400 text-xs sm:text-sm">
+                        상단에서 검색어를 입력하시면 관련 최신 뉴스 기사 원문 목록이 이곳에 표시됩니다.
+                    </div>
+                </div>
+            </aside>
+
+            <!-- [오른쪽 영역] AI 브리핑 및 심층 분석 (7칸/12) -->
+            <section class="lg:col-span-7 space-y-4">
+                <div class="flex items-center justify-between border-b border-dark-850 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">🤖</span>
+                        <h3 class="text-sm font-bold text-slate-200 tracking-tight" id="result-title">Gemini AI 뉴스 브리핑 & 핵심 요약</h3>
+                    </div>
+                    <span id="status-badge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-medium">대기 중</span>
+                </div>
+
+                <!-- AI 분석 결과 카드 -->
+                <div class="border border-dark-850 rounded-2xl p-6 sm:p-7 bg-dark-900/70 shadow-xl space-y-4 min-h-[400px]">
+                    <div id="result-content" class="text-sm sm:text-base text-slate-300 leading-relaxed whitespace-pre-wrap">
+검색어를 입력하고 [검색하기]를 누르면, 왼쪽에는 최신 뉴스 기사 원문이 나열되고 오른쪽에는 AI가 기사 원문을 종합 분석한 핵심 브리핑이 제공됩니다.
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="border-t border-dark-850 py-6 text-center text-xs text-slate-500 mt-auto">
+        IT News Curation Service &copy; 2026. All rights reserved.
+    </footer>
+
+    <script>
+        const input = document.getElementById('search-input');
+        const button = document.getElementById('search-button');
+        const newsList = document.getElementById('news-list');
+        const newsSectionTitle = document.getElementById('news-section-title');
+        const newsCount = document.getElementById('news-count');
+        const resultContent = document.getElementById('result-content');
+        const statusBadge = document.getElementById('status-badge');
+        const resultTitle = document.getElementById('result-title');
+
+        function renderArticles(articles, query) {
+            newsSectionTitle.textContent = `'${query}' 관련 뉴스 기사`;
+            if (!articles || articles.length === 0) {
+                newsCount.textContent = '0건';
+                newsList.innerHTML = `
+                    <div class="border border-dark-850 rounded-2xl p-6 text-center bg-dark-900/40 text-slate-400 text-xs">
+                        검색된 뉴스 기사가 없습니다.
+                    </div>
+                `;
+                return;
+            }
+
+            newsCount.textContent = `${articles.length}건`;
+            newsList.innerHTML = articles.map((article, index) => {
+                const sourceBadge = article.source 
+                    ? `<span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 text-[11px] font-medium border border-sky-500/20">${escapeHtml(article.source)}</span>` 
+                    : '';
+                const pubDate = article.pubDate ? `<span class="text-[11px] text-slate-500">${escapeHtml(article.pubDate)}</span>` : '';
+
+                return `
+                    <article class="group border border-dark-850 hover:border-sky-500/50 rounded-2xl p-4 bg-dark-900/80 hover:bg-dark-900 transition shadow-lg space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            ${sourceBadge}
+                            ${pubDate}
+                        </div>
+                        <h4 class="text-sm font-semibold text-slate-100 group-hover:text-sky-300 transition line-clamp-2">
+                            <a href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer" class="hover:underline flex items-start gap-1">
+                                <span>${escapeHtml(article.title)}</span>
+                                <svg class="w-3.5 h-3.5 opacity-60 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                            </a>
+                        </h4>
+                        ${article.description ? `<p class="text-xs text-slate-400 line-clamp-3 leading-relaxed">${escapeHtml(article.description)}</p>` : ''}
+                        <div class="pt-1">
+                            <a href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] text-sky-400 hover:text-sky-300 font-medium">
+                                기사 원문 보러가기 &rarr;
+                            </a>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        async function requestGemini(query) {
+            query = query.trim();
+            if (!query) return;
+
+            // UI 로딩 상태 변경
+            button.disabled = true;
+            input.disabled = true;
+            statusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 animate-pulse';
+            statusBadge.textContent = '뉴스 검색 및 브리핑 생성 중...';
+            resultTitle.textContent = `[${query}] AI 분석 브리핑`;
+            resultContent.textContent = '최신 뉴스를 실시간으로 검색하고 Gemini AI가 요약 분석하고 있습니다. 잠시만 기다려 주세요...';
+            
+            newsList.innerHTML = `
+                <div class="border border-dark-850 rounded-2xl p-6 text-center bg-dark-900/40 text-sky-400 text-xs animate-pulse">
+                    관련 뉴스 기사 원문을 가져오는 중입니다...
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '답변 요청 중 오류가 발생했습니다.');
+                }
+
+                statusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                statusBadge.textContent = '완료';
+                resultContent.textContent = data.answer;
+
+                // 뉴스 원문 렌더링
+                renderArticles(data.articles || [], query);
+
+            } catch (err) {
+                statusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                statusBadge.textContent = '오류';
+                resultContent.textContent = `❌ ${err.message}`;
+            } finally {
+                button.disabled = false;
+                input.disabled = false;
+                input.focus();
+            }
+        }
+
+        button.addEventListener('click', () => {
+            requestGemini(input.value);
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                requestGemini(input.value);
+            }
+        });
+
+        document.querySelectorAll('.tag-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const text = btn.textContent.replace('#', '').trim();
+                input.value = text;
+                requestGemini(text);
+            });
+        });
+
+        // 동작 구조 가이드 토글 버튼
+        const toggleFlowBtn = document.getElementById('toggle-flow-btn');
+        const workflowPanel = document.getElementById('workflow-panel');
+        if (toggleFlowBtn && workflowPanel) {
+            toggleFlowBtn.addEventListener('click', () => {
+                const isHidden = workflowPanel.classList.toggle('hidden');
+                toggleFlowBtn.querySelector('span:last-child').textContent = isHidden ? 'API 동작 구조 열기' : 'API 동작 구조 닫기';
+            });
+        }
+
+        // 단계별 클릭 동작 시뮬레이션
+        const stepDetails = {
+            1: {
+                title: "1단계: 손님이 메뉴를 주문합니다 🙋‍♂️",
+                tag: "주문서 작성",
+                icon: "🙋‍♂️",
+                color: "border-sky-500",
+                desc: "사용자가 궁금한 단어(예: '인공지능')를 검색창에 입력하고 전송 버튼을 누르면, '이 단어에 대한 최신 뉴스를 알려줘!'라는 주문서가 컴퓨터에 즉시 배달됩니다."
+            },
+            2: {
+                title: "2단계: 컴퓨터가 가장 최신 신문 5장을 가져옵니다 📰",
+                tag: "신문 수집",
+                icon: "📰",
+                color: "border-indigo-500",
+                desc: "주문서를 받은 컴퓨터가 구글 뉴스 가판대로 재빠르게 달려가서, 방금 1초 전에 올라온 가장 신선한 IT 기사 5건(제목, 언론사, 링크)을 가져옵니다."
+            },
+            3: {
+                title: "3단계: 똑똑한 AI 비서가 신문을 읽고 요약합니다 🧠",
+                tag: "AI 3줄 요약",
+                icon: "🧠",
+                color: "border-purple-500",
+                desc: "가져온 신문 5장이 너무 길면 읽기 힘들겠죠? 똑똑한 AI 비서(Gemini)가 1초 만에 기사를 정독한 뒤 핵심 요약, 최신 소식, 알아둘 점을 3줄로 깔끔하게 정리합니다."
+            },
+            4: {
+                title: "4단계: 손님 테이블에 먹기 좋게 차려냅니다 🎁",
+                tag: "화면 완성",
+                icon: "🎁",
+                color: "border-emerald-500",
+                desc: "정리가 끝나면 화면 왼쪽에는 원문 기사 링크가 달린 카드가 생기고, 오른쪽에는 AI가 쓴 요약본이 예쁘게 나타나 누구나 쉽게 읽을 수 있습니다."
+            }
+        };
+
+        function simulateStep(stepNum) {
+            // 모든 카드 활성화 클래스 초기화
+            document.querySelectorAll('.step-card').forEach(c => {
+                c.classList.remove('step-active');
+            });
+
+            // 파이프 노드 활성화 효과 초기화
+            for (let i = 1; i <= 4; i++) {
+                const node = document.getElementById(`pipe-node-${i}`);
+                if (node) node.classList.remove('active-glow');
+            }
+
+            const card = document.getElementById(`step-card-${stepNum}`);
+            if (card) {
+                card.classList.add('step-active');
+            }
+
+            const activeNode = document.getElementById(`pipe-node-${stepNum}`);
+            if (activeNode) {
+                activeNode.classList.add('active-glow');
+            }
+
+            // 패킷 라벨 동적 변경
+            const packetLabel = document.getElementById('packet-label');
+            if (packetLabel) {
+                if (stepNum === 1) packetLabel.textContent = '손님의 검색 주문서 배달 중 ✉️';
+                else if (stepNum === 2) packetLabel.textContent = '최신 뉴스 5개 가져오는 중 📰';
+                else if (stepNum === 3) packetLabel.textContent = 'AI 비서가 3줄 요약하는 중 🧠';
+                else if (stepNum === 4) packetLabel.textContent = '화면에 예쁘게 차려내는 중 🎁';
+            }
+
+            const info = stepDetails[stepNum];
+            const monitor = document.getElementById('live-action-box');
+            const title = document.getElementById('live-action-title');
+            const tag = document.getElementById('live-action-tag');
+            const icon = document.getElementById('live-action-icon');
+            const desc = document.getElementById('live-action-desc');
+
+            if (monitor && info) {
+                monitor.className = `mt-4 p-4 rounded-xl bg-dark-950 border ${info.color} text-xs space-y-2 transition-all duration-300 shadow-xl`;
+                title.textContent = info.title;
+                tag.textContent = info.tag;
+                icon.textContent = info.icon;
+                desc.innerHTML = info.desc;
+            }
+        }
+
+        // 1~4단계 자동 연속 시뮬레이션
+        let isSimulating = false;
+        const playBtn = document.getElementById('demo-play-btn');
+        if (playBtn) {
+            playBtn.addEventListener('click', async () => {
+                if (isSimulating) return;
+                isSimulating = true;
+                playBtn.disabled = true;
+                playBtn.classList.add('opacity-50');
+
+                for (let i = 1; i <= 4; i++) {
+                    simulateStep(i);
+                    await new Promise(r => setTimeout(r, 1500));
+                }
+
+                playBtn.disabled = false;
+                playBtn.classList.remove('opacity-50');
+                isSimulating = false;
+            });
+        }
+    </script>
+</body>
+</html>
