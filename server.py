@@ -237,6 +237,12 @@ def run(port=8000):
         httpd.server_close()
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+    env_port = os.environ.get("PORT")
+    if env_port:
+        port = int(env_port)
+    elif len(sys.argv) > 1:
+        port = int(sys.argv[1])
+    else:
+        port = 8000
     run(port)
 

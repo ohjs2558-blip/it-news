@@ -62,7 +62,13 @@
                     </h1>
                 </div>
             </div>
-            <span class="text-xs text-slate-400 hidden sm:inline">실시간 테크 뉴스 & AI 큐레이션</span>
+            <div class="flex items-center gap-3">
+                <button id="toggle-flow-btn" class="text-xs px-3 py-1.5 rounded-xl bg-dark-850 hover:bg-dark-800 text-sky-400 border border-dark-800 hover:border-sky-500/30 font-medium transition flex items-center gap-1.5 shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>API 동작 구조 보기</span>
+                </button>
+                <span class="text-xs text-slate-400 hidden sm:inline">실시간 테크 뉴스 & AI 큐레이션</span>
+            </div>
         </div>
     </header>
 
@@ -108,7 +114,85 @@
     </div>
 
     <!-- 메인 2단 레이아웃 컨테이너 -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
+
+        <!-- [시각화 섹션] 시스템 및 API 동작 흐름 가이드 -->
+        <section id="workflow-panel" class="border border-sky-500/30 bg-gradient-to-b from-dark-900/90 to-dark-950/90 rounded-2xl p-5 sm:p-6 shadow-2xl relative overflow-hidden">
+            <div class="flex items-center justify-between pb-4 border-b border-dark-850">
+                <div class="flex items-center gap-2">
+                    <span class="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 text-sm">🔄</span>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
+                            실시간 API 파이프라인 및 핵심 동작 원리
+                        </h3>
+                        <p class="text-xs text-slate-400">사용자 요청부터 뉴스 수집, Gemini AI 브리핑 생성까지의 순환 흐름</p>
+                    </div>
+                </div>
+                <span class="text-[11px] px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 font-medium">자동 파이프라인</span>
+            </div>
+
+            <!-- 4단계 파이프라인 카드 시각화 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5 relative">
+                
+                <!-- 1단계: 사용자 입력 -->
+                <div class="group bg-dark-900/90 border border-dark-800 hover:border-sky-500/50 rounded-xl p-4 transition shadow-md relative">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="w-6 h-6 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center text-xs font-bold">1</span>
+                        <span class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Web Client</span>
+                    </div>
+                    <div class="text-xs font-bold text-slate-100 flex items-center gap-1.5 mb-1.5">
+                        <span>⌨️ 검색어 입력 & 요청</span>
+                    </div>
+                    <p class="text-[12px] text-slate-400 leading-relaxed">
+                        사용자가 키워드를 입력하면 <code class="text-[11px] bg-dark-950 px-1.5 py-0.5 rounded text-sky-300">POST /api/chat</code> 엔드포인트로 JSON 전송
+                    </p>
+                </div>
+
+                <!-- 2단계: 실시간 뉴스 수집 -->
+                <div class="group bg-dark-900/90 border border-dark-800 hover:border-sky-500/50 rounded-xl p-4 transition shadow-md relative">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold">2</span>
+                        <span class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">External API</span>
+                    </div>
+                    <div class="text-xs font-bold text-slate-100 flex items-center gap-1.5 mb-1.5">
+                        <span>📡 Google News RSS</span>
+                    </div>
+                    <p class="text-[12px] text-slate-400 leading-relaxed">
+                        RSS 피드에서 최신 기사 XML을 실시간 파싱하여 기사 제목, 언론사, 링크, 요약 추출
+                    </p>
+                </div>
+
+                <!-- 3단계: Gemini AI 분석 -->
+                <div class="group bg-dark-900/90 border border-dark-800 hover:border-sky-500/50 rounded-xl p-4 transition shadow-md relative">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="w-6 h-6 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold">3</span>
+                        <span class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">LLM Engine</span>
+                    </div>
+                    <div class="text-xs font-bold text-slate-100 flex items-center gap-1.5 mb-1.5">
+                        <span>🤖 Gemini 2.5 AI 브리핑</span>
+                    </div>
+                    <p class="text-[12px] text-slate-400 leading-relaxed">
+                        수집된 기사 원문을 컨텍스트로 결합하여 핵심 요약, 최신 동향, 시사점 3단계로 구조화 생성
+                    </p>
+                </div>
+
+                <!-- 4단계: 다중 Fallback & 렌더링 -->
+                <div class="group bg-dark-900/90 border border-dark-800 hover:border-sky-500/50 rounded-xl p-4 transition shadow-md relative">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold">4</span>
+                        <span class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Safe Response</span>
+                    </div>
+                    <div class="text-xs font-bold text-slate-100 flex items-center gap-1.5 mb-1.5">
+                        <span>🛡️ 결합 출력 & 폴백</span>
+                    </div>
+                    <p class="text-[12px] text-slate-400 leading-relaxed">
+                        네트워크 장애나 API 제한 시 안전 폴백 가동, 화면 좌측(기사)과 우측(AI 브리핑) 동시 렌더링
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
             <!-- [왼쪽 영역] 검색된 뉴스 원문 목록 (5칸/12) -->
@@ -287,6 +371,16 @@
                 requestGemini(text);
             });
         });
+
+        // 동작 구조 가이드 토글 버튼
+        const toggleFlowBtn = document.getElementById('toggle-flow-btn');
+        const workflowPanel = document.getElementById('workflow-panel');
+        if (toggleFlowBtn && workflowPanel) {
+            toggleFlowBtn.addEventListener('click', () => {
+                const isHidden = workflowPanel.classList.toggle('hidden');
+                toggleFlowBtn.querySelector('span:last-child').textContent = isHidden ? 'API 동작 구조 열기' : 'API 동작 구조 닫기';
+            });
+        }
     </script>
 </body>
 </html>
