@@ -47,6 +47,16 @@
             50% { transform: scale(1.05); opacity: 0.4; }
             100% { transform: scale(0.95); opacity: 0.8; }
         }
+        @keyframes flow-packet {
+            0% { left: 0%; opacity: 0; transform: translateY(-50%) scale(0.6); }
+            15% { opacity: 1; transform: translateY(-50%) scale(1.1); }
+            85% { opacity: 1; transform: translateY(-50%) scale(1.1); }
+            100% { left: 100%; opacity: 0; transform: translateY(-50%) scale(0.6); }
+        }
+        @keyframes pulse-node {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+            50% { transform: scale(1.06); box-shadow: 0 0 18px 4px rgba(56, 189, 248, 0.6); }
+        }
         .step-active {
             border-color: #38bdf8 !important;
             box-shadow: 0 0 25px rgba(56, 189, 248, 0.4) !important;
@@ -54,6 +64,12 @@
         }
         .step-pulse {
             animation: ping-slow 2s infinite ease-in-out;
+        }
+        .anim-packet {
+            animation: flow-packet 2.8s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .active-glow {
+            animation: pulse-node 1.5s infinite ease-in-out;
         }
     </style>
 </head>
@@ -158,6 +174,70 @@
             <div class="pt-2 text-xs text-slate-400 flex items-center gap-1.5">
                 <span class="text-sky-400 font-bold">👆 클릭해 보세요:</span>
                 <span>카드를 클릭하면 실제 데이터가 전달되는 애니메이션과 상세 동작 콘솔이 작동합니다.</span>
+            </div>
+
+            <!-- [NEW] 시각적 실시간 데이터 패킷 애니메이션 트랙 -->
+            <div class="mt-4 p-4 rounded-2xl bg-dark-950/90 border border-dark-800 relative overflow-hidden shadow-inner">
+                <div class="text-[11px] font-semibold text-slate-400 mb-3 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+                        실시간 데이터 패킷 이동 애니메이션 (Live Data Stream)
+                    </span>
+                    <span class="text-slate-500 font-mono text-[10px]" id="anim-stream-status">STREAMING: ON</span>
+                </div>
+
+                <!-- 4개 노드와 연결선 -->
+                <div class="relative py-4 px-2 sm:px-6">
+                    <!-- 기본 연결선 트랙 -->
+                    <div class="absolute top-1/2 left-6 right-6 h-1 bg-dark-800 -translate-y-1/2 z-0 rounded-full"></div>
+                    <!-- 빛나는 데이터 전송 파이프 효과 -->
+                    <div class="absolute top-1/2 left-6 right-6 h-0.5 bg-gradient-to-r from-sky-500 via-purple-500 to-emerald-500 -translate-y-1/2 z-0 opacity-40"></div>
+                    
+                    <!-- 이동하는 패킷 엘리먼트 -->
+                    <div id="flow-particle" class="anim-packet absolute top-1/2 -translate-y-1/2 z-10 pointer-events-none flex items-center gap-1">
+                        <div class="w-3.5 h-3.5 rounded-full bg-sky-400 shadow-[0_0_12px_#38bdf8] flex items-center justify-center text-[8px] font-bold text-dark-950">
+                            ⚡
+                        </div>
+                        <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-sky-500/90 text-white shadow-md backdrop-blur whitespace-nowrap" id="packet-label">
+                            query: "AI"
+                        </span>
+                    </div>
+
+                    <!-- 4개 핵심 노드 아이콘 -->
+                    <div class="relative z-10 flex items-center justify-between">
+                        <!-- 노드 1 -->
+                        <div id="pipe-node-1" class="flex flex-col items-center gap-1.5 cursor-pointer" onclick="simulateStep(1)">
+                            <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-dark-900 border-2 border-sky-500 flex items-center justify-center text-sm sm:text-base shadow-lg transition-transform duration-300 hover:scale-110">
+                                ⌨️
+                            </div>
+                            <span class="text-[11px] font-bold text-sky-400">1. 클라이언트</span>
+                        </div>
+
+                        <!-- 노드 2 -->
+                        <div id="pipe-node-2" class="flex flex-col items-center gap-1.5 cursor-pointer" onclick="simulateStep(2)">
+                            <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-dark-900 border-2 border-indigo-500 flex items-center justify-center text-sm sm:text-base shadow-lg transition-transform duration-300 hover:scale-110">
+                                📡
+                            </div>
+                            <span class="text-[11px] font-bold text-indigo-400">2. 뉴스 RSS</span>
+                        </div>
+
+                        <!-- 노드 3 -->
+                        <div id="pipe-node-3" class="flex flex-col items-center gap-1.5 cursor-pointer" onclick="simulateStep(3)">
+                            <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-dark-900 border-2 border-purple-500 flex items-center justify-center text-sm sm:text-base shadow-lg transition-transform duration-300 hover:scale-110">
+                                🤖
+                            </div>
+                            <span class="text-[11px] font-bold text-purple-400">3. Gemini 2.5</span>
+                        </div>
+
+                        <!-- 노드 4 -->
+                        <div id="pipe-node-4" class="flex flex-col items-center gap-1.5 cursor-pointer" onclick="simulateStep(4)">
+                            <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-dark-900 border-2 border-emerald-500 flex items-center justify-center text-sm sm:text-base shadow-lg transition-transform duration-300 hover:scale-110">
+                                ✨
+                            </div>
+                            <span class="text-[11px] font-bold text-emerald-400">4. 화면 렌더링</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- 흐름 화살표가 있는 4단계 인터랙티브 시각화 -->
@@ -503,9 +583,29 @@
                 c.classList.remove('step-active');
             });
 
+            // 파이프 노드 활성화 효과 초기화
+            for (let i = 1; i <= 4; i++) {
+                const node = document.getElementById(`pipe-node-${i}`);
+                if (node) node.classList.remove('active-glow');
+            }
+
             const card = document.getElementById(`step-card-${stepNum}`);
             if (card) {
                 card.classList.add('step-active');
+            }
+
+            const activeNode = document.getElementById(`pipe-node-${stepNum}`);
+            if (activeNode) {
+                activeNode.classList.add('active-glow');
+            }
+
+            // 패킷 라벨 동적 변경
+            const packetLabel = document.getElementById('packet-label');
+            if (packetLabel) {
+                if (stepNum === 1) packetLabel.textContent = 'query: "AI"';
+                else if (stepNum === 2) packetLabel.textContent = 'XML 5 Articles';
+                else if (stepNum === 3) packetLabel.textContent = 'Gemini Summary';
+                else if (stepNum === 4) packetLabel.textContent = 'Render UI';
             }
 
             const info = stepDetails[stepNum];
