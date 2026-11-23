@@ -3,11 +3,14 @@ import os
 import sys
 import time
 import threading
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse, quote_plus
+from urllib.parse import urlparse, quote_plus, parse_qs
+import io
+import zipfile
+import xml.sax.saxutils
 import urllib.request
 import urllib.error
 import xml.etree.ElementTree as ET
@@ -21,6 +24,8 @@ DEFAULT_DAILY_LIMIT = 10
 QUERY_LOGS_PATH = BASE_DIR / "query_logs.json"
 ACTIVITY_LOGS_PATH = BASE_DIR / "activity_logs.json"
 SCRAPBOOK_DB_PATH = BASE_DIR / "user_scrapbook.json"
+REPORTS_DIR = BASE_DIR / "reports"
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # 역할별 기본 일일 한도
 ROLE_DEFAULTS = {
@@ -160,6 +165,222 @@ def add_activity_log(user_id, email, action, details, category="general", ip="-"
             json.dump(logs, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"[경고] 활동 로그 저장 실패: {e}")
+
+# ----------------- 일일 자동 보고서 생성 및 엑셀 내보내기 -----------------
+def generate_daily_report_data(target_date_str=None):
+    """지정된 날짜(기본 오늘)의 사용자 이용 기록을 집계 분석하여 일일 보고서 데이터 생성"""
+    if not target_date_str:
+        target_date_str = date.today().isoformat()
+
+    logs = _load_activity_logs()
+    day_logs = [l for l in logs if str(l.get("timestamp", "")).startswith(target_date_str)]
+
+    action_counts = {}
+    category_counts = {}
+    user_stats = {}
+
+    for l in day_logs:
+        uid = l.get("userId") or "unknown"
+        email = l.get("email") or "익명"
+        act = l.get("action") or "UNKNOWN"
+        cat = l.get("category") or "general"
+
+        action_counts[act] = action_counts.get(act, 0) + 1
+        category_counts[cat] = category_counts.get(cat, 0) + 1
+
+        if uid not in user_stats:
+            user_stats[uid] = {
+                "userId": uid,
+                "email": email,
+                "totalActivities": 0,
+                "aiQueries": 0,
+                "scraps": 0,
+                "logins": 0,
+                "lastAction": l.get("timestamp", "")
+            }
+        u = user_stats[uid]
+        if email and email != "익명":
+            u["email"] = email
+        u["totalActivities"] += 1
+        if act == "CHAT_QUERY" or cat == "ai":
+            u["aiQueries"] += 1
+        elif "SCRAP" in act:
+            u["scraps"] += 1
+        elif act in ("LOGIN", "SIGNUP", "ADMIN_LOGIN"):
+            u["logins"] += 1
+
+    users_list = sorted(user_stats.values(), key=lambda x: x["totalActivities"], reverse=True)
+
+    report = {
+        "date": target_date_str,
+        "generatedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "totalActivities": len(day_logs),
+        "activeUserCount": len(user_stats),
+        "totalAiQueries": action_counts.get("CHAT_QUERY", 0),
+        "totalScraps": sum(v for k, v in action_counts.items() if "SCRAP" in k),
+        "actionCounts": action_counts,
+        "categoryCounts": category_counts,
+        "users": users_list
+    }
+
+    # 파일로 캐시/보관
+    try:
+        report_file = REPORTS_DIR / f"report_{target_date_str}.json"
+        with open(report_file, "w", encoding="utf-8") as f:
+            json.dump(report, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[경고] 일일 보고서 파일 저장 실패: {e}")
+
+    return report
+
+def get_or_generate_report(target_date_str=None):
+    """해당 날짜 보고서 조회 (없으면 자동 생성)"""
+    if not target_date_str:
+        target_date_str = date.today().isoformat()
+    return generate_daily_report_data(target_date_str)
+
+def list_saved_reports():
+    """저장된 보고서 일자 목록 반환 (최근 순)"""
+    dates = set()
+    if REPORTS_DIR.exists():
+        for p in REPORTS_DIR.glob("report_*.json"):
+            name = p.stem.replace("report_", "")
+            if len(name) == 10:
+                dates.add(name)
+    # 로그 파일 내 일자들도 수집
+    for l in _load_activity_logs():
+        ts = str(l.get("timestamp", ""))
+        if len(ts) >= 10:
+            dates.add(ts[:10])
+    dates.add(date.today().isoformat())
+    return sorted(list(dates), reverse=True)
+
+def create_excel_report_bytes(report_data):
+    """보고서 데이터를 오픈 표준 OOXML (.xlsx) 바이너리로 순수 Python 구현 생성"""
+    target_date = report_data.get("date", "")
+    gen_time = report_data.get("generatedAt", "")
+    users = report_data.get("users", [])
+    act_counts = report_data.get("actionCounts", {})
+    cat_counts = report_data.get("categoryCounts", {})
+
+    summary_rows = [
+        ["IT News 관리자 - 일일 이용 기록 보고서"],
+        ["기준 일자", target_date],
+        ["생성 일시", gen_time],
+        [""],
+        ["[주요 지표 요약]"],
+        ["활성 사용자 수 (명)", report_data.get("activeUserCount", 0)],
+        ["총 활동/이용 건수 (건)", report_data.get("totalActivities", 0)],
+        ["AI 뉴스 질의 건수 (건)", report_data.get("totalAiQueries", 0)],
+        ["스크랩/북마크 건수 (건)", report_data.get("totalScraps", 0)],
+        [""],
+        ["[카테고리별 활동 건수]"],
+        ["카테고리", "건수"]
+    ]
+    for cat, cnt in sorted(cat_counts.items(), key=lambda x: x[1], reverse=True):
+        summary_rows.append([cat, cnt])
+
+    summary_rows.append([""])
+    summary_rows.append(["[상세 액션별 건수]"])
+    summary_rows.append(["액션 명칭", "발생 건수"])
+    for act, cnt in sorted(act_counts.items(), key=lambda x: x[1], reverse=True):
+        summary_rows.append([act, cnt])
+
+    user_rows = [
+        ["사용자 ID", "이메일", "총 활동 수", "AI 질문 수", "스크랩 수", "로그인 수", "최근 활동 시간"]
+    ]
+    for u in users:
+        user_rows.append([
+            u.get("userId", ""),
+            u.get("email", ""),
+            u.get("totalActivities", 0),
+            u.get("aiQueries", 0),
+            u.get("scraps", 0),
+            u.get("logins", 0),
+            u.get("lastAction", "")
+        ])
+
+    sheets = [
+        {"name": "일일요약", "rows": summary_rows},
+        {"name": "사용자별이용기록", "rows": user_rows}
+    ]
+
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        content_types = [
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
+            '<Default Extension="xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>',
+            '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        ]
+        for idx in range(1, len(sheets) + 1):
+            content_types.append(f'<Override PartName="/xl/worksheets/sheet{idx}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>')
+        content_types.append('</Types>')
+        z.writestr('[Content_Types].xml', ''.join(content_types))
+
+        z.writestr('_rels/.rels',
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+            '</Relationships>'
+        )
+
+        wb_rels = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">']
+        for idx in range(1, len(sheets) + 1):
+            wb_rels.append(f'<Relationship Id="rId{idx}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet{idx}.xml"/>')
+        wb_rels.append('</Relationships>')
+        z.writestr('xl/_rels/workbook.xml.rels', ''.join(wb_rels))
+
+        wb = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>']
+        for idx, s in enumerate(sheets, 1):
+            s_name = xml.sax.saxutils.escape(s.get("name", f"Sheet{idx}"))
+            wb.append(f'<sheet name="{s_name}" sheetId="{idx}" r:id="rId{idx}"/>')
+        wb.append('</sheets></workbook>')
+        z.writestr('xl/workbook.xml', ''.join(wb))
+
+        for idx, s in enumerate(sheets, 1):
+            ws = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>']
+            for r_i, r in enumerate(s.get("rows", []), 1):
+                ws.append(f'<row r="{r_i}">')
+                for c_i, v in enumerate(r, 1):
+                    temp = c_i
+                    col_letter = ''
+                    while temp > 0:
+                        temp, rem = divmod(temp - 1, 26)
+                        col_letter = chr(65 + rem) + col_letter
+                    ref = f'{col_letter}{r_i}'
+                    if v is None:
+                        continue
+                    if isinstance(v, bool):
+                        ws.append(f'<c r="{ref}" t="b"><v>{1 if v else 0}</v></c>')
+                    elif isinstance(v, (int, float)):
+                        ws.append(f'<c r="{ref}" t="n"><v>{v}</v></c>')
+                    else:
+                        esc = xml.sax.saxutils.escape(str(v))
+                        ws.append(f'<c r="{ref}" t="inlineStr"><is><t>{esc}</t></is></c>')
+                ws.append('</row>')
+            ws.append('</sheetData></worksheet>')
+            z.writestr(f'xl/worksheets/sheet{idx}.xml', ''.join(ws))
+
+    return out.getvalue()
+
+def _start_daily_report_background_scheduler():
+    """자정마다 전일 및 당일 보고서를 자동 집계/갱신하는 백그라운드 데몬 스레드"""
+    def _scheduler_loop():
+        while True:
+            try:
+                # 1시간마다 주기적으로 당일 및 전일 보고서 자동 갱신
+                today_str = date.today().isoformat()
+                yesterday_str = (date.today() - timedelta(days=1)).isoformat()
+                generate_daily_report_data(today_str)
+                generate_daily_report_data(yesterday_str)
+            except Exception as e:
+                print(f"[보고서 스케줄러 오류] {e}")
+            time.sleep(3600)
+
+    t = threading.Thread(target=_scheduler_loop, daemon=True)
+    t.start()
 
 def get_user_usage(user_id, email=None):
     """오늘 날짜 기준 사용자의 사용 횟수, 잔여 한도 및 권한 조회"""
@@ -784,6 +1005,49 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
             self._send_json({"logs": logs[:200]})
             return
 
+        # ----------------- 관리자 보고서 및 엑셀 다운로드 API -----------------
+        if url.path == "/api/admin/reports":
+            token = self._extract_token()
+            admin_user, err = self._require_admin(token)
+            if err:
+                self._send_json({"error": err}, status=HTTPStatus.FORBIDDEN)
+                return
+
+            query_params = dict(q.split("=", 1) for q in url.query.split("&") if "=" in q)
+            target_date = query_params.get("date", "").strip() or date.today().isoformat()
+            
+            report = get_or_generate_report(target_date)
+            available_dates = list_saved_reports()
+            self._send_json({
+                "success": True,
+                "report": report,
+                "availableDates": available_dates
+            })
+            return
+
+        if url.path == "/api/admin/reports/export":
+            token = self._extract_token()
+            admin_user, err = self._require_admin(token)
+            if err:
+                self._send_json({"error": err}, status=HTTPStatus.FORBIDDEN)
+                return
+
+            query_params = dict(q.split("=", 1) for q in url.query.split("&") if "=" in q)
+            target_date = query_params.get("date", "").strip() or date.today().isoformat()
+            report = get_or_generate_report(target_date)
+
+            xlsx_data = create_excel_report_bytes(report)
+            filename = f"ITNews_Daily_Report_{target_date}.xlsx"
+            
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+            self.send_header("Content-Length", str(len(xlsx_data)))
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.end_headers()
+            self.wfile.write(xlsx_data)
+            return
+
         if url.path in ["/admin", "/admin/", "/admin.html"]:
             admin_file = BASE_DIR / "admin.html"
             if admin_file.exists():
@@ -1347,6 +1611,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
 def run(port=8000):
+    _start_daily_report_background_scheduler()
     server_address = ("", port)
     httpd = ThreadingHTTPServer(server_address, NewsChatHandler)
     print(f"IT News & Gemini Chatbot 서버 시작: http://localhost:{port}")

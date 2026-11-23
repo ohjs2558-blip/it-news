@@ -182,7 +182,81 @@
             </div>
         </section>
 
-        <!-- 2. 전체 사용자 활동 감사 로그 (Audit Logs) 섹션 -->
+        <!-- 2. 일일 이용 분석 보고서 및 엑셀 다운로드 섹션 -->
+        <section class="bg-dark-900 border border-dark-850 rounded-2xl shadow-xl overflow-hidden space-y-4">
+            <div class="p-5 border-b border-dark-850 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <span>📊 일일 이용 기록 분석 보고서 (Daily Analytics Report)</span>
+                        <span class="text-[11px] font-normal px-2 py-0.5 rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/20">자동 생성 및 다운로드</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">사용자들의 실시간 이용 및 활동 패턴을 일자별로 자동 집계하여 분석하고 엑셀 파일(.xlsx)로 내보냅니다.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex items-center gap-2 bg-dark-950 px-3 py-1.5 rounded-xl border border-dark-800 text-xs">
+                        <label for="report-date-select" class="text-slate-400 whitespace-nowrap">분석 일자:</label>
+                        <select id="report-date-select" class="bg-transparent text-white font-mono focus:outline-none cursor-pointer">
+                            <!-- 날짜 옵션 동적 추가 -->
+                        </select>
+                    </div>
+                    <button id="download-excel-btn" class="text-xs px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-lg shadow-emerald-950/40 transition flex items-center gap-1.5 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span>엑셀 다운로드 (.xlsx)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 보고서 핵심 지표 카드 -->
+            <div class="p-5 space-y-5">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-dark-950/60 p-3.5 rounded-xl border border-dark-800">
+                        <div class="text-[11px] text-slate-400">일일 활성 사용자(DAU)</div>
+                        <div class="text-xl font-bold text-sky-400 mt-1" id="report-active-users">-</div>
+                    </div>
+                    <div class="bg-dark-950/60 p-3.5 rounded-xl border border-dark-800">
+                        <div class="text-[11px] text-slate-400">총 활동/조회 건수</div>
+                        <div class="text-xl font-bold text-white mt-1" id="report-total-activities">-</div>
+                    </div>
+                    <div class="bg-dark-950/60 p-3.5 rounded-xl border border-dark-800">
+                        <div class="text-[11px] text-slate-400">AI 뉴스 질의 건수</div>
+                        <div class="text-xl font-bold text-indigo-400 mt-1" id="report-ai-queries">-</div>
+                    </div>
+                    <div class="bg-dark-950/60 p-3.5 rounded-xl border border-dark-800">
+                        <div class="text-[11px] text-slate-400">기사 스크랩 건수</div>
+                        <div class="text-xl font-bold text-amber-400 mt-1" id="report-scraps">-</div>
+                    </div>
+                </div>
+
+                <!-- 사용자별 세부 이용 통계 테이블 -->
+                <div class="border border-dark-850 rounded-xl overflow-hidden">
+                    <div class="bg-dark-950 px-4 py-2.5 border-b border-dark-850 flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-300">사용자별 이용 요약 분석</span>
+                        <span class="text-[11px] text-slate-500" id="report-generated-time">-</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-dark-950/40 text-slate-400 uppercase text-[10px] tracking-wider border-b border-dark-850">
+                                <tr>
+                                    <th class="py-2.5 px-4">사용자 (이메일/ID)</th>
+                                    <th class="py-2.5 px-4">총 활동</th>
+                                    <th class="py-2.5 px-4">AI 질문</th>
+                                    <th class="py-2.5 px-4">스크랩</th>
+                                    <th class="py-2.5 px-4">접속/로그인</th>
+                                    <th class="py-2.5 px-4">최근 활동 시간</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-users-table-body" class="divide-y divide-dark-850 font-mono">
+                                <tr>
+                                    <td colspan="6" class="py-6 text-center text-slate-500 font-sans">보고서를 집계하는 중입니다...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 전체 사용자 활동 감사 로그 (Audit Logs) 섹션 -->
         <section class="bg-dark-900 border border-dark-850 rounded-2xl shadow-xl overflow-hidden space-y-4">
             <div class="p-5 border-b border-dark-850 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>

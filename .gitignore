@@ -2,3 +2,8 @@
 .venv/
 __pycache__/
 *.py[cod]
+*.log
+reports/
+user_usage.json
+activity_logs.json
+user_scrapbook.json
