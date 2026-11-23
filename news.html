@@ -207,66 +207,6 @@
                 </span>
             </div>
 
-            <!-- IT 분야별 원클릭 이메일 요약본 자동 전송 섹션 -->
-            <div class="mt-4 pt-4 border-t border-dark-850/70 max-w-3xl mx-auto text-left bg-dark-950/70 p-4 sm:p-5 rounded-2xl border border-dark-800/80 shadow-lg">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                    <div class="flex items-center gap-2">
-                        <span class="text-lg">📬</span>
-                        <div>
-                            <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                                <span>관심 IT분야 선택 &amp; 이메일 요약본 자동 전송</span>
-                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">원클릭 AI 브리핑</span>
-                            </h3>
-                            <p class="text-[11px] text-slate-400">관심 있는 분야를 클릭하시면 최신 기사를 AI가 요약하여 입력하신 이메일로 즉시 자동 발송합니다.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 이메일 입력창 -->
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-3">
-                    <div class="relative flex-1">
-                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">📧</span>
-                        <input 
-                            type="email" 
-                            id="newsletter-email-input" 
-                            placeholder="요약본을 수신할 이메일 주소를 입력하세요 (예: user@example.com)" 
-                            class="w-full bg-dark-900 border border-dark-800 rounded-xl pl-9 pr-3.5 py-2 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition font-mono"
-                        >
-                    </div>
-                    <span class="text-[11px] text-slate-500 self-center hidden sm:inline whitespace-nowrap">분야 버튼을 클릭하면 자동 전송됩니다 👉</span>
-                </div>
-
-                <!-- 관심 IT 분야 선택 버튼들 -->
-                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2" id="it-category-buttons">
-                    <button type="button" onclick="sendCategoryNewsEmail('인공지능 (AI)')" class="it-cat-btn text-xs px-3 py-1.5 rounded-xl bg-dark-900 hover:bg-emerald-600/20 text-slate-200 hover:text-emerald-300 border border-dark-750 hover:border-emerald-500/50 font-medium transition flex items-center gap-1.5 shadow-sm active:scale-95">
-                        <span>🤖</span>
-                        <span>인공지능 (AI)</span>
-                    </button>
-                    <button type="button" onclick="sendCategoryNewsEmail('클라우드 & 인프라')" class="it-cat-btn text-xs px-3 py-1.5 rounded-xl bg-dark-900 hover:bg-emerald-600/20 text-slate-200 hover:text-emerald-300 border border-dark-750 hover:border-emerald-500/50 font-medium transition flex items-center gap-1.5 shadow-sm active:scale-95">
-                        <span>☁️</span>
-                        <span>클라우드 &amp; 인프라</span>
-                    </button>
-                    <button type="button" onclick="sendCategoryNewsEmail('사이버 보안')" class="it-cat-btn text-xs px-3 py-1.5 rounded-xl bg-dark-900 hover:bg-emerald-600/20 text-slate-200 hover:text-emerald-300 border border-dark-750 hover:border-emerald-500/50 font-medium transition flex items-center gap-1.5 shadow-sm active:scale-95">
-                        <span>🛡️</span>
-                        <span>사이버 보안</span>
-                    </button>
-                    <button type="button" onclick="sendCategoryNewsEmail('빅데이터 & 머신러닝')" class="it-cat-btn text-xs px-3 py-1.5 rounded-xl bg-dark-900 hover:bg-emerald-600/20 text-slate-200 hover:text-emerald-300 border border-dark-750 hover:border-emerald-500/50 font-medium transition flex items-center gap-1.5 shadow-sm active:scale-95">
-                        <span>📊</span>
-                        <span>빅데이터 &amp; 분석</span>
-                    </button>
-                    <button type="button" onclick="sendCategoryNewsEmail('블록체인 & Web3')" class="it-cat-btn text-xs px-3 py-1.5 rounded-xl bg-dark-900 hover:bg-emerald-600/20 text-slate-200 hover:text-emerald-300 border border-dark-750 hover:border-emerald-500/50 font-medium transition flex items-center gap-1.5 shadow-sm active:scale-95">
-                        <span>🔗</span>
-                        <span>블록체인·Web3</span>
-                    </button>
-                    <button type="button" onclick="sendCategoryNewsEmail('모바일 & 스마트 기기')" class="it-cat-btn text-xs px-3 py-1.5 rounded-xl bg-dark-900 hover:bg-emerald-600/20 text-slate-200 hover:text-emerald-300 border border-dark-750 hover:border-emerald-500/50 font-medium transition flex items-center gap-1.5 shadow-sm active:scale-95">
-                        <span>📱</span>
-                        <span>모바일 &amp; 디바이스</span>
-                    </button>
-                </div>
-
-                <!-- 이메일 전송 상태 피드백 영역 -->
-                <div id="email-send-status" class="mt-2 text-xs hidden"></div>
-            </div>
         </div>
     </div>
 
@@ -2081,91 +2021,6 @@
         }
 
         // ==========================================
-        // 관심 IT분야 뉴스 요약본 이메일 자동 전송 로직
-        // ==========================================
-        let isSendingEmail = false;
-        window.sendCategoryNewsEmail = async function(categoryName) {
-            if (isSendingEmail) return;
-
-            const emailInput = document.getElementById('newsletter-email-input');
-            const statusEl = document.getElementById('email-send-status');
-            
-            // 입력창에 값이 비어있다면, 현재 로그인된 사용자의 이메일 자동 채우기 시도
-            let targetEmail = emailInput ? emailInput.value.trim() : '';
-            if (!targetEmail) {
-                const currentUser = getCurrentUser();
-                if (currentUser && currentUser.email) {
-                    targetEmail = currentUser.email;
-                    if (emailInput) emailInput.value = targetEmail;
-                }
-            }
-
-            if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
-                alert('요약본을 받으실 올바른 이메일 주소를 입력해 주세요.\n(예: myname@example.com)');
-                if (emailInput) {
-                    emailInput.focus();
-                    emailInput.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
-                    setTimeout(() => emailInput.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500'), 2500);
-                }
-                return;
-            }
-
-            // 전송 중 상태 표시
-            isSendingEmail = true;
-            const buttons = document.querySelectorAll('.it-cat-btn');
-            buttons.forEach(b => b.classList.add('opacity-50', 'pointer-events-none'));
-
-            if (statusEl) {
-                statusEl.className = 'mt-2.5 p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs flex items-center gap-2';
-                statusEl.innerHTML = `
-                    <div class="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
-                    <span><strong>[${escapeHtml(categoryName)}]</strong> 최신 뉴스를 수집하고 AI 요약본을 생성하여 <strong>${escapeHtml(targetEmail)}</strong>(으)로 전송 중입니다...</span>
-                `;
-                statusEl.classList.remove('hidden');
-            }
-
-            try {
-                const token = await getAuthToken();
-                const res = await fetch('/api/news/send-email', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        category: categoryName,
-                        email: targetEmail,
-                        authToken: token || ''
-                    })
-                });
-
-                const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.error || '이메일 발송에 실패했습니다.');
-                }
-
-                if (statusEl) {
-                    statusEl.className = 'mt-2.5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2';
-                    statusEl.innerHTML = `
-                        <span>✅</span>
-                        <span><strong>[${escapeHtml(categoryName)}]</strong> 뉴스 요약본이 <strong>${escapeHtml(targetEmail)}</strong>(으)로 전송되었습니다! 받은편지함을 확인해 주세요.</span>
-                    `;
-                }
-
-                showToast(`📧 [${categoryName}] 뉴스 요약본이 ${targetEmail}로 발송되었습니다!`);
-
-            } catch (err) {
-                if (statusEl) {
-                    statusEl.className = 'mt-2.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2';
-                    statusEl.innerHTML = `
-                        <span>⚠️</span>
-                        <span>전송 실패: ${escapeHtml(err.message)}</span>
-                    `;
-                }
-            } finally {
-                isSendingEmail = false;
-                buttons.forEach(b => b.classList.remove('opacity-50', 'pointer-events-none'));
-            }
-        };
-
-        // ==========================================
         // 회원가입 및 사용자 인증 관리 로직 (Supabase + LocalStorage Fallback)
         // ==========================================
         const authModal = document.getElementById('auth-modal');
@@ -2351,14 +2206,10 @@
 
         function updateAuthUI() {
             const user = getCurrentUser();
-            const newsletterEmailInput = document.getElementById('newsletter-email-input');
             if (user) {
                 authGuestArea.classList.add('hidden');
                 authUserArea.classList.remove('hidden');
                 userDisplayName.textContent = user.name;
-                if (newsletterEmailInput && !newsletterEmailInput.value && user.email) {
-                    newsletterEmailInput.value = user.email;
-                }
             } else {
                 authGuestArea.classList.remove('hidden');
                 authUserArea.classList.add('hidden');
