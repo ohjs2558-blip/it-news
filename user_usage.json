@@ -1,0 +1,79 @@
+{
+  "usr_tester1": {
+    "id": "usr_tester1",
+    "email": "tester@example.com",
+    "role": "vip",
+    "last_seen": "2026-11-20 13:46:38",
+    "custom_limit": 50,
+    "is_blocked": false,
+    "date": "2026-11-20",
+    "used": 11,
+    "total_requests": 11
+  },
+  "b0ee4507-bd42-4dfe-972e-51dffa01cef6": {
+    "id": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "role": "vip",
+    "last_seen": "2026-11-23 13:02:01",
+    "custom_limit": 50,
+    "date": "2026-11-23",
+    "used": 37,
+    "is_blocked": false,
+    "total_requests": 67
+  },
+  "91899e21-ced3-4aa5-b004-a2aa964b4a88": {
+    "id": "91899e21-ced3-4aa5-b004-a2aa964b4a88",
+    "email": "tech@naver.com",
+    "role": "vip",
+    "last_seen": "2026-11-20 12:06:57",
+    "custom_limit": 50,
+    "date": "2026-11-20",
+    "used": 2,
+    "is_blocked": false,
+    "total_requests": 2
+  },
+  "fd9f106e-b765-4fb5-9e4b-cad2b23e8736": {
+    "id": "fd9f106e-b765-4fb5-9e4b-cad2b23e8736",
+    "email": "test@test.com",
+    "role": "vip",
+    "last_seen": "2026-11-20 13:21:03",
+    "custom_limit": 50,
+    "date": "2026-11-20",
+    "used": 1,
+    "is_blocked": false,
+    "total_requests": 1
+  },
+  "usr_test_1": {
+    "id": "usr_test_1",
+    "email": "usr_test_1@local.test",
+    "role": "user",
+    "date": "2026-11-23",
+    "used": 1,
+    "custom_limit": 10,
+    "is_blocked": false,
+    "last_seen": "2026-11-23 09:50:52",
+    "total_requests": 1
+  },
+  "usr_test_8": {
+    "id": "usr_test_8",
+    "email": "usr_test_8@local.test",
+    "role": "user",
+    "date": "2026-11-23",
+    "used": 1,
+    "custom_limit": 10,
+    "is_blocked": false,
+    "last_seen": "2026-11-23 10:15:22",
+    "total_requests": 1
+  },
+  "usr_external_test": {
+    "id": "usr_external_test",
+    "email": "usr_external_test@local.test",
+    "role": "user",
+    "date": "2026-11-23",
+    "used": 1,
+    "custom_limit": 10,
+    "is_blocked": false,
+    "last_seen": "2026-11-23 10:41:22",
+    "total_requests": 1
+  }
+}

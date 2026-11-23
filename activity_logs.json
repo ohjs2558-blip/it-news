@@ -1,0 +1,1892 @@
+[
+  {
+    "id": "act_1795406521545",
+    "timestamp": "2026-11-23 13:02:01",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795406515413",
+    "timestamp": "2026-11-23 13:01:55",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AWS 클라우드'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795406504145",
+    "timestamp": "2026-11-23 13:01:44",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795402130831",
+    "timestamp": "2026-11-23 11:48:50",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AI로봇'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795402088487",
+    "timestamp": "2026-11-23 11:48:08",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '최신 IT기술'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401935481",
+    "timestamp": "2026-11-23 11:45:35",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401876962",
+    "timestamp": "2026-11-23 11:44:36",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '이 대통령, 울산 SK 인공지능 데이터센터 건설 현장 '",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401864701",
+    "timestamp": "2026-11-23 11:44:24",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_BATCH_ADD",
+    "category": "general",
+    "details": "기사 1건 일괄 스크랩 추가",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401812528",
+    "timestamp": "2026-11-23 11:43:32",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '데이터센터'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401524071",
+    "timestamp": "2026-11-23 11:38:44",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '데이터 센터'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401511803",
+    "timestamp": "2026-11-23 11:38:31",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401511146",
+    "timestamp": "2026-11-23 11:38:31",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '사이버 보안'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401501515",
+    "timestamp": "2026-11-23 11:38:21",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '리눅스 커널'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401491054",
+    "timestamp": "2026-11-23 11:38:11",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401473657",
+    "timestamp": "2026-11-23 11:37:53",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AWS 클라우드'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401441962",
+    "timestamp": "2026-11-23 11:37:21",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '국제전기, 인공지능 전력·배전 설계 시스템 구축'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401436081",
+    "timestamp": "2026-11-23 11:37:16",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '‘인공지능(AI) 당직 보이스봇’ 도입으로 야간 당직업'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401435129",
+    "timestamp": "2026-11-23 11:37:15",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '전쟁에도 개입하는 AI… ‘AI 블랙박스’ 해부 가능할'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401400179",
+    "timestamp": "2026-11-23 11:36:40",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401358353",
+    "timestamp": "2026-11-23 11:35:58",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_BATCH_ADD",
+    "category": "general",
+    "details": "기사 3건 일괄 스크랩 추가",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401351001",
+    "timestamp": "2026-11-23 11:35:51",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401346399",
+    "timestamp": "2026-11-23 11:35:46",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401334932",
+    "timestamp": "2026-11-23 11:35:34",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '전쟁에도 개입하는 AI… ‘AI 블랙박스’ 해부 가능할'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795401320130",
+    "timestamp": "2026-11-23 11:35:20",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '전쟁에도 개입하는 AI… ‘AI 블랙박스’ 해부 가능할'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400991996",
+    "timestamp": "2026-11-23 11:29:51",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '전쟁에도 개입하는 AI… ‘AI 블랙박스’ 해부 가능할'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400951731",
+    "timestamp": "2026-11-23 11:29:11",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '전쟁에도 개입하는 AI… ‘AI 블랙박스’ 해부 가능할'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400922355",
+    "timestamp": "2026-11-23 11:28:42",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400917411",
+    "timestamp": "2026-11-23 11:28:37",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '1번 해제'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400902715",
+    "timestamp": "2026-11-23 11:28:22",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400893644",
+    "timestamp": "2026-11-23 11:28:13",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400882455",
+    "timestamp": "2026-11-23 11:28:02",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400869930",
+    "timestamp": "2026-11-23 11:27:49",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400864168",
+    "timestamp": "2026-11-23 11:27:44",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400853726",
+    "timestamp": "2026-11-23 11:27:33",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400849722",
+    "timestamp": "2026-11-23 11:27:29",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400356874",
+    "timestamp": "2026-11-23 11:19:16",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400355606",
+    "timestamp": "2026-11-23 11:19:15",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400355191",
+    "timestamp": "2026-11-23 11:19:15",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400351579",
+    "timestamp": "2026-11-23 11:19:11",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400070043",
+    "timestamp": "2026-11-23 11:14:30",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400062030",
+    "timestamp": "2026-11-23 11:14:22",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795400028244",
+    "timestamp": "2026-11-23 11:13:48",
+    "userId": "-",
+    "email": "admin",
+    "action": "ADMIN_LOGIN_FAIL",
+    "category": "admin",
+    "details": "관리자 로그인 실패 (입력 아이디: 'admin')",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795399968490",
+    "timestamp": "2026-11-23 11:12:48",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795399966707",
+    "timestamp": "2026-11-23 11:12:46",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AWS 클라우드'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795399954689",
+    "timestamp": "2026-11-23 11:12:34",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "Supabase 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795399916054",
+    "timestamp": "2026-11-23 11:11:56",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795399783092",
+    "timestamp": "2026-11-23 11:09:43",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '프롬프트 하나로 클라우드 구축…AWS, 개발자 가입·배'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795399773592",
+    "timestamp": "2026-11-23 11:09:33",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '\"혁신과 상생을 하나로\"…금천구, 인공지능(AI) 경진'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795399769356",
+    "timestamp": "2026-11-23 11:09:29",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AWS 클라우드'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795399508261",
+    "timestamp": "2026-11-23 11:05:08",
+    "userId": "fd9f106e-b765-4fb5-9e4b-cad2b23e8736",
+    "email": "test@test.com",
+    "action": "ROLE_CHANGE",
+    "category": "admin",
+    "details": "관리자(admin@itnews.internal)가 권한을 [VIP]로 변경 (한도: 50회)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795398512642",
+    "timestamp": "2026-11-23 10:48:32",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795398506291",
+    "timestamp": "2026-11-23 10:48:26",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "Supabase 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795398086705",
+    "timestamp": "2026-11-23 10:41:26",
+    "userId": "admin_admin",
+    "email": "admin",
+    "action": "ADMIN_LOGIN",
+    "category": "admin",
+    "details": "관리자 'admin' 대시보드 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795398086607",
+    "timestamp": "2026-11-23 10:41:26",
+    "userId": "usr_external_test",
+    "email": "usr_external_test@local.test",
+    "action": "SCRAP_SUMMARIZE",
+    "category": "ai",
+    "details": "스크랩북 기사 1건 종합 AI 브리핑 요약 요청",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795398082154",
+    "timestamp": "2026-11-23 10:41:22",
+    "userId": "usr_external_test",
+    "email": "usr_external_test@local.test",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: 'SK쉴더스, '루키즈' 37기 모집…클라우드 보안 실무'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795398082021",
+    "timestamp": "2026-11-23 10:41:22",
+    "userId": "usr_external_test",
+    "email": "usr_external_test@local.test",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '클라우드 보안'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397944928",
+    "timestamp": "2026-11-23 10:39:04",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: 'KB리브모바일, 부산 청년 상인 키오스크 추가로 설치해'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397937089",
+    "timestamp": "2026-11-23 10:38:57",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: 'KB리브모바일, 부산 청년 상인 키오스크 추가로 설치해'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397682321",
+    "timestamp": "2026-11-23 10:34:42",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: 'KB리브모바일, 부산 청년 상인 키오스크 추가로 설치해'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397676459",
+    "timestamp": "2026-11-23 10:34:36",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: 'KB리브모바일, 부산 청년 상인 키오스크 추가로 설치해'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397671667",
+    "timestamp": "2026-11-23 10:34:31",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '1번 기사 추가해줘'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397614497",
+    "timestamp": "2026-11-23 10:33:34",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '전쟁에도 개입하는 AI… ‘AI 블랙박스’ 해부 가능할'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397613164",
+    "timestamp": "2026-11-23 10:33:33",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397504668",
+    "timestamp": "2026-11-23 10:31:44",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "Supabase 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397495485",
+    "timestamp": "2026-11-23 10:31:35",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGOUT",
+    "category": "auth",
+    "details": "사용자 수동 로그아웃",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397491020",
+    "timestamp": "2026-11-23 10:31:31",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "Supabase 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397482516",
+    "timestamp": "2026-11-23 10:31:22",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGOUT",
+    "category": "auth",
+    "details": "사용자 수동 로그아웃",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397471922",
+    "timestamp": "2026-11-23 10:31:11",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '\"혁신과 상생을 하나로\"…금천구, 인공지능(AI) 경진'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397471082",
+    "timestamp": "2026-11-23 10:31:11",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '전쟁에도 개입하는 AI… ‘AI 블랙박스’ 해부 가능할'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397216842",
+    "timestamp": "2026-11-23 10:26:56",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '전쟁에도 개입하는 AI… ‘AI 블랙박스’ 해부 가능할'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397211207",
+    "timestamp": "2026-11-23 10:26:51",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '전쟁에도 개입하는 AI… ‘AI 블랙박스’ 해부 가능할'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795397203143",
+    "timestamp": "2026-11-23 10:26:43",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396845704",
+    "timestamp": "2026-11-23 10:20:45",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396818051",
+    "timestamp": "2026-11-23 10:20:18",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '기사 나중에 볼래'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396637207",
+    "timestamp": "2026-11-23 10:17:17",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396629733",
+    "timestamp": "2026-11-23 10:17:09",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '인천시, 지역 13개 대학과 ‘글로벌 인공지능(AI) '",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396626538",
+    "timestamp": "2026-11-23 10:17:06",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '인천시, 지역 13개 대학과 ‘글로벌 인공지능(AI) '",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396617653",
+    "timestamp": "2026-11-23 10:16:57",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '“AI 고속도로가 대한민국의 미래 연다”…울산 AI데이'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396616107",
+    "timestamp": "2026-11-23 10:16:56",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '크라우드스트라이크, 지스케일러 인수 협상중…사이버보안 '",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396615252",
+    "timestamp": "2026-11-23 10:16:55",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '리눅스 커널서 11년 숨어 있던 고위험 취약점 '노이지'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396613538",
+    "timestamp": "2026-11-23 10:16:53",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_REMOVE",
+    "category": "general",
+    "details": "기사 스크랩 해제: '전쟁에도 개입하는 AI… ‘AI 블랙박스’ 해부 가능할'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396608181",
+    "timestamp": "2026-11-23 10:16:48",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '전쟁에도 개입하는 AI… ‘AI 블랙박스’ 해부 가능할'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396584191",
+    "timestamp": "2026-11-23 10:16:24",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396522064",
+    "timestamp": "2026-11-23 10:15:22",
+    "userId": "usr_test_8",
+    "email": "usr_test_8@local.test",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396143470",
+    "timestamp": "2026-11-23 10:09:03",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396064158",
+    "timestamp": "2026-11-23 10:07:44",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "ROLE_CHANGE",
+    "category": "admin",
+    "details": "관리자(admin@itnews.internal)가 권한을 [VIP]로 변경 (한도: 50회)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396049342",
+    "timestamp": "2026-11-23 10:07:29",
+    "userId": "admin_admin",
+    "email": "admin",
+    "action": "ADMIN_LOGIN",
+    "category": "admin",
+    "details": "관리자 'admin' 대시보드 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795396009411",
+    "timestamp": "2026-11-23 10:06:49",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_SUMMARIZE",
+    "category": "ai",
+    "details": "스크랩북 기사 3건 종합 AI 브리핑 요약 요청",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395996435",
+    "timestamp": "2026-11-23 10:06:36",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '리눅스 커널서 11년 숨어 있던 고위험 취약점 '노이지'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395994498",
+    "timestamp": "2026-11-23 10:06:34",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '리눅스 커널'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395985416",
+    "timestamp": "2026-11-23 10:06:25",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '크라우드스트라이크, 지스케일러 인수 협상중…사이버보안 '",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395983379",
+    "timestamp": "2026-11-23 10:06:23",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '사이버 보안'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395964606",
+    "timestamp": "2026-11-23 10:06:04",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_SUMMARIZE",
+    "category": "ai",
+    "details": "스크랩북 기사 1건 종합 AI 브리핑 요약 요청",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395956963",
+    "timestamp": "2026-11-23 10:05:56",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '“AI 고속도로가 대한민국의 미래 연다”…울산 AI데이'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395947663",
+    "timestamp": "2026-11-23 10:05:47",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'ai데이터센터'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395909814",
+    "timestamp": "2026-11-23 10:05:09",
+    "userId": "usr_test_scrap",
+    "email": "usr_test_scrap@local.test",
+    "action": "SCRAP_SUMMARIZE",
+    "category": "ai",
+    "details": "스크랩북 기사 2건 종합 AI 브리핑 요약 요청",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395905108",
+    "timestamp": "2026-11-23 10:05:05",
+    "userId": "usr_test_scrap",
+    "email": "usr_test_scrap@local.test",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: '리눅스 커널 6.12 릴리즈: 실시간 선점 스케줄링 P'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395905105",
+    "timestamp": "2026-11-23 10:05:05",
+    "userId": "usr_test_scrap",
+    "email": "usr_test_scrap@local.test",
+    "action": "SCRAP_ADD",
+    "category": "general",
+    "details": "기사 스크랩 추가: 'Google DeepMind, 차세대 고성능 추론 모델'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395304422",
+    "timestamp": "2026-11-23 09:55:04",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'ai데이터센터'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395146953",
+    "timestamp": "2026-11-23 09:52:26",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "WISHLIST_REMOVE",
+    "category": "general",
+    "details": "상품 찜 해제: '로지텍 MX Master 3S 무소음 마우스'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395145004",
+    "timestamp": "2026-11-23 09:52:25",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "WISHLIST_ADD",
+    "category": "general",
+    "details": "상품 찜 추가: '로지텍 MX Master 3S 무소음 마우스' (129,000원)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395116288",
+    "timestamp": "2026-11-23 09:51:56",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "WISHLIST_REMOVE",
+    "category": "general",
+    "details": "상품 찜 해제: '로지텍 MX Master 3S 무소음 마우스'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395113474",
+    "timestamp": "2026-11-23 09:51:53",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "WISHLIST_ADD",
+    "category": "general",
+    "details": "상품 찜 추가: '로지텍 MX Master 3S 무소음 마우스' (129,000원)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395092540",
+    "timestamp": "2026-11-23 09:51:32",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '저소음 키보드 찜해줘'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395052661",
+    "timestamp": "2026-11-23 09:50:52",
+    "userId": "usr_test_1",
+    "email": "usr_test_1@local.test",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '스마트워치'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395035281",
+    "timestamp": "2026-11-23 09:50:35",
+    "userId": "usr_test_1",
+    "email": "usr_test_1@local.test",
+    "action": "WISHLIST_REMOVE",
+    "category": "general",
+    "details": "상품 찜 해제: '애플 M3 맥북 프로 14'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795395035278",
+    "timestamp": "2026-11-23 09:50:35",
+    "userId": "usr_test_1",
+    "email": "usr_test_1@local.test",
+    "action": "WISHLIST_ADD",
+    "category": "general",
+    "details": "상품 찜 추가: '애플 M3 맥북 프로 14' (2,390,000원)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795393424170",
+    "timestamp": "2026-11-23 09:23:44",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'ai데이터센터'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795393417576",
+    "timestamp": "2026-11-23 09:23:37",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'ai데이터센토'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795393403547",
+    "timestamp": "2026-11-23 09:23:23",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '사이버 보안'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795393397430",
+    "timestamp": "2026-11-23 09:23:17",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "Supabase 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795150216486",
+    "timestamp": "2026-11-20 13:50:16",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGOUT",
+    "category": "auth",
+    "details": "사용자 수동 로그아웃",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795150201097",
+    "timestamp": "2026-11-20 13:50:01",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '보안'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795150176841",
+    "timestamp": "2026-11-20 13:49:36",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '금융 보안'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795150131886",
+    "timestamp": "2026-11-20 13:48:51",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '양자컴퓨터'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795150116728",
+    "timestamp": "2026-11-20 13:48:36",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "RESET_USAGE",
+    "category": "admin",
+    "details": "관리자(admin@itnews.internal)가 오늘 사용량을 0회로 초기화함",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795150113060",
+    "timestamp": "2026-11-20 13:48:33",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "ROLE_CHANGE",
+    "category": "admin",
+    "details": "관리자(admin@itnews.internal)가 권한을 [USER]로 변경 (한도: 10회)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795150058387",
+    "timestamp": "2026-11-20 13:47:38",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '코딩'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795150032318",
+    "timestamp": "2026-11-20 13:47:12",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '개발자'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795149998460",
+    "timestamp": "2026-11-20 13:46:38",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '도커 쿠버네티스 컨테이너'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795149870636",
+    "timestamp": "2026-11-20 13:44:30",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '파이썬 웹 개발'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795149861008",
+    "timestamp": "2026-11-20 13:44:21",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795149835885",
+    "timestamp": "2026-11-20 13:43:55",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795149819880",
+    "timestamp": "2026-11-20 13:43:39",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795149688157",
+    "timestamp": "2026-11-20 13:41:28",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '보안'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795149668074",
+    "timestamp": "2026-11-20 13:41:08",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '개발자 채용'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795149497337",
+    "timestamp": "2026-11-20 13:38:17",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '개발자'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795149452245",
+    "timestamp": "2026-11-20 13:37:32",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '코딩'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795149248390",
+    "timestamp": "2026-11-20 13:34:08",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '코딩'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795148954489",
+    "timestamp": "2026-11-20 13:29:14",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '오준석'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795148937449",
+    "timestamp": "2026-11-20 13:28:57",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '클라우드 쿠버네티스'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795148922254",
+    "timestamp": "2026-11-20 13:28:42",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795148887159",
+    "timestamp": "2026-11-20 13:28:07",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '이채길'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795148879195",
+    "timestamp": "2026-11-20 13:27:59",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795148591143",
+    "timestamp": "2026-11-20 13:23:11",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '이채길'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795148580921",
+    "timestamp": "2026-11-20 13:23:00",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795148463546",
+    "timestamp": "2026-11-20 13:21:03",
+    "userId": "fd9f106e-b765-4fb5-9e4b-cad2b23e8736",
+    "email": "test@test.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795148443334",
+    "timestamp": "2026-11-20 13:20:43",
+    "userId": "fd9f106e-b765-4fb5-9e4b-cad2b23e8736",
+    "email": "test@test.com",
+    "action": "SIGNUP",
+    "category": "auth",
+    "details": "Supabase 회원가입 성공 (test)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795148310576",
+    "timestamp": "2026-11-20 13:18:30",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795148019105",
+    "timestamp": "2026-11-20 13:13:39",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '이채길'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795144103190",
+    "timestamp": "2026-11-20 12:08:23",
+    "userId": "91899e21-ced3-4aa5-b004-a2aa964b4a88",
+    "email": "tech@naver.com",
+    "action": "ROLE_CHANGE",
+    "category": "admin",
+    "details": "관리자(admin@itnews.internal)가 권한을 [VIP]로 변경 (한도: 50회)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795144017482",
+    "timestamp": "2026-11-20 12:06:57",
+    "userId": "91899e21-ced3-4aa5-b004-a2aa964b4a88",
+    "email": "tech@naver.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '오준석'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795144005075",
+    "timestamp": "2026-11-20 12:06:45",
+    "userId": "91899e21-ced3-4aa5-b004-a2aa964b4a88",
+    "email": "tech@naver.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '오준석'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795143994500",
+    "timestamp": "2026-11-20 12:06:34",
+    "userId": "91899e21-ced3-4aa5-b004-a2aa964b4a88",
+    "email": "tech@naver.com",
+    "action": "SIGNUP",
+    "category": "auth",
+    "details": "Supabase 회원가입 성공 (이채길)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795143977447",
+    "timestamp": "2026-11-20 12:06:17",
+    "userId": "-",
+    "email": "dlcorlf@hajsk.com",
+    "action": "LOGIN_FAIL",
+    "category": "auth",
+    "details": "Supabase 로그인 실패: Invalid login credentials",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795143607370",
+    "timestamp": "2026-11-20 12:00:07",
+    "userId": "admin_admin",
+    "email": "admin",
+    "action": "ADMIN_LOGIN",
+    "category": "admin",
+    "details": "관리자 'admin' 대시보드 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795143418385",
+    "timestamp": "2026-11-20 11:56:58",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "ROLE_CHANGE",
+    "category": "admin",
+    "details": "관리자(admin@itnews.internal)가 권한을 [VIP]로 변경 (한도: 50회)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795143409298",
+    "timestamp": "2026-11-20 11:56:49",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "ROLE_CHANGE",
+    "category": "admin",
+    "details": "관리자(admin@itnews.internal)가 권한을 [USER]로 변경 (한도: 10회)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795143209652",
+    "timestamp": "2026-11-20 11:53:29",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "ROLE_CHANGE",
+    "category": "admin",
+    "details": "관리자(admin@itnews.internal)가 권한을 [VIP]로 변경 (한도: 50회)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795143063641",
+    "timestamp": "2026-11-20 11:51:03",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '리눅스 커널'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795143062924",
+    "timestamp": "2026-11-20 11:51:02",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AWS 클라우드'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795143006967",
+    "timestamp": "2026-11-20 11:50:06",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AWS 클라우드'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795142878509",
+    "timestamp": "2026-11-20 11:47:58",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AWS 클라우드'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795142637056",
+    "timestamp": "2026-11-20 11:43:57",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795142612694",
+    "timestamp": "2026-11-20 11:43:32",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '사이버보안 보안관제 직무 관점으로 분석해줘'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795142577549",
+    "timestamp": "2026-11-20 11:42:57",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795142569388",
+    "timestamp": "2026-11-20 11:42:49",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "Supabase 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795142544672",
+    "timestamp": "2026-11-20 11:42:24",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "RESET_USAGE",
+    "category": "admin",
+    "details": "관리자(admin@itnews.internal)가 오늘 사용량을 0회로 초기화함",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795142518415",
+    "timestamp": "2026-11-20 11:41:58",
+    "userId": "-",
+    "email": "ohjs2558@gamil.com",
+    "action": "LOGIN_FAIL",
+    "category": "auth",
+    "details": "Supabase 로그인 실패: Invalid login credentials",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795142507247",
+    "timestamp": "2026-11-20 11:41:47",
+    "userId": "-",
+    "email": "ohjs2558@gamil.com",
+    "action": "LOGIN_FAIL",
+    "category": "auth",
+    "details": "Supabase 로그인 실패: Invalid login credentials",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795142502047",
+    "timestamp": "2026-11-20 11:41:42",
+    "userId": "-",
+    "email": "ohjs2558@gamil.com",
+    "action": "LOGIN_FAIL",
+    "category": "auth",
+    "details": "Supabase 로그인 실패: Invalid login credentials",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795140591668",
+    "timestamp": "2026-11-20 11:09:51",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "QUOTA_EXCEEDED",
+    "category": "ai",
+    "details": "일일 한도 초과로 AI 질문 거부 (한도: 10회)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795140590886",
+    "timestamp": "2026-11-20 11:09:50",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "QUOTA_EXCEEDED",
+    "category": "ai",
+    "details": "일일 한도 초과로 AI 질문 거부 (한도: 10회)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795140582957",
+    "timestamp": "2026-11-20 11:09:42",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '사이버 보안'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795140352241",
+    "timestamp": "2026-11-20 11:05:52",
+    "userId": "usr_delete_test",
+    "email": "delete_me@example.com",
+    "action": "USER_WITHDRAW",
+    "category": "auth",
+    "details": "회원 탈퇴 요청 승인: 아이디(delete_me@example.com) 및 비밀번호/사용데이터 영구 파기 완료 (Supabase Auth 삭제 경고: HTTP Error 401: Unauthorized)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795140352013",
+    "timestamp": "2026-11-20 11:05:52",
+    "userId": "usr_delete_test",
+    "email": "delete_me@example.com",
+    "action": "SIGNUP",
+    "category": "auth",
+    "details": "탈퇴 테스트 유저 생성",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795140307963",
+    "timestamp": "2026-11-20 11:05:07",
+    "userId": "usr_delete_test",
+    "email": "delete_me@example.com",
+    "action": "SIGNUP",
+    "category": "auth",
+    "details": "탈퇴 테스트 유저 생성",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139998215",
+    "timestamp": "2026-11-20 10:59:58",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139991090",
+    "timestamp": "2026-11-20 10:59:51",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "Supabase 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139972560",
+    "timestamp": "2026-11-20 10:59:32",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGOUT",
+    "category": "auth",
+    "details": "사용자 수동 로그아웃",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139941192",
+    "timestamp": "2026-11-20 10:59:01",
+    "userId": "admin_admin",
+    "email": "admin",
+    "action": "ADMIN_LOGIN",
+    "category": "admin",
+    "details": "관리자 'admin' 대시보드 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139888472",
+    "timestamp": "2026-11-20 10:58:08",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGOUT",
+    "category": "auth",
+    "details": "사용자 수동 로그아웃",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139829793",
+    "timestamp": "2026-11-20 10:57:09",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AWS 클라우드'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139813284",
+    "timestamp": "2026-11-20 10:56:53",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '사이버 보안'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139805796",
+    "timestamp": "2026-11-20 10:56:45",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "Supabase 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139575503",
+    "timestamp": "2026-11-20 10:52:55",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '사이버 보안'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139554972",
+    "timestamp": "2026-11-20 10:52:34",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AWS 클라우드'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139547561",
+    "timestamp": "2026-11-20 10:52:27",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "Supabase 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139496893",
+    "timestamp": "2026-11-20 10:51:36",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AWS 클라우드'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139487621",
+    "timestamp": "2026-11-20 10:51:27",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "Supabase 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139395873",
+    "timestamp": "2026-11-20 10:49:55",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGOUT",
+    "category": "auth",
+    "details": "사용자 수동 로그아웃",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139390253",
+    "timestamp": "2026-11-20 10:49:50",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: 'AWS 클라우드'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139359050",
+    "timestamp": "2026-11-20 10:49:19",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139349894",
+    "timestamp": "2026-11-20 10:49:09",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "Supabase 로그인 성공",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139315188",
+    "timestamp": "2026-11-20 10:48:35",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "CHAT_QUERY",
+    "category": "ai",
+    "details": "AI 요약 및 뉴스 검색: '인공지능 (AI)'",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139304088",
+    "timestamp": "2026-11-20 10:48:24",
+    "userId": "b0ee4507-bd42-4dfe-972e-51dffa01cef6",
+    "email": "ohjs2558@gmail.com",
+    "action": "SIGNUP",
+    "category": "auth",
+    "details": "Supabase 회원가입 성공 (오준석)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795139265884",
+    "timestamp": "2026-11-20 10:47:45",
+    "userId": "-",
+    "email": "ohjs2558@gmail.com",
+    "action": "LOGIN_FAIL",
+    "category": "auth",
+    "details": "Supabase 로그인 실패: Invalid login credentials",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795138451100",
+    "timestamp": "2026-11-20 10:34:11",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "ROLE_CHANGE",
+    "category": "admin",
+    "details": "관리자(admin@itnews.internal)가 권한을 [VIP]로 변경 (한도: 50회)",
+    "ip": "127.0.0.1"
+  },
+  {
+    "id": "act_1795138451099",
+    "timestamp": "2026-11-20 10:34:11",
+    "userId": "usr_tester1",
+    "email": "tester@example.com",
+    "action": "LOGIN",
+    "category": "auth",
+    "details": "테스터 로그인",
+    "ip": "127.0.0.1"
+  }
+]
