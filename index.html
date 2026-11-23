@@ -1010,10 +1010,15 @@
 
         function isArticleScrapped(article) {
             if (!article) return false;
-            return userScrapbook.some(it => 
-                (article.link && it.link === article.link) || 
-                (article.title && it.title === article.title)
-            );
+            const aTitle = (article.title || '').trim();
+            const aLink = (article.link || '').trim();
+            return userScrapbook.some(it => {
+                const itTitle = (it.title || '').trim();
+                const itLink = (it.link || '').trim();
+                if (aTitle && itTitle && aTitle === itTitle) return true;
+                if (aLink && itLink && aLink === itLink && !aLink.includes('google.com/search')) return true;
+                return false;
+            });
         }
 
         // 기사 스크랩 토글 (추가/삭제)

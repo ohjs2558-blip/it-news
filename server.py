@@ -817,56 +817,56 @@ def fetch_news_articles(query, limit=8):
             {
                 "title": f"'{query}' 관련 최신 IT 동향 및 주요 기술 발표",
                 "source": "Tech IT News",
-                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "link": f"https://www.google.com/search?q={quote_plus(query + ' 최신 동향 기술 발표')}",
                 "pubDate": "실시간 큐레이션",
                 "description": f"최근 IT 및 소프트웨어 엔지니어링 업계에서 '{query}'와 관련된 아키텍처 및 연구 동향이 주목받고 있습니다."
             },
             {
                 "title": f"글로벌 기업들의 '{query}' 기술 도입 사례 및 전망",
                 "source": "글로벌 테크 브리핑",
-                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "link": f"https://www.google.com/search?q={quote_plus(query + ' 글로벌 기업 도입 사례 전망')}",
                 "pubDate": "실시간 큐레이션",
                 "description": f"기업 현장에서 업무 생산성 향상과 효율화를 위해 '{query}' 관련 솔루션 도입을 적극 검토하고 있습니다."
             },
             {
                 "title": f"개발자를 위한 '{query}' 핵심 실무 체크포인트",
                 "source": "IT 개발자 저널",
-                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "link": f"https://www.google.com/search?q={quote_plus(query + ' 개발자 실무 체크포인트')}",
                 "pubDate": "실시간 큐레이션",
                 "description": f"엔지니어링 팀이 '{query}' 환경을 구축하거나 시스템을 연동할 때 고려해야 할 핵심 가이드라인입니다."
             },
             {
                 "title": f"'{query}' 보안 취약점 분석 및 컴플라이언스 대응 가이드",
                 "source": "보안 테크 리포트",
-                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "link": f"https://www.google.com/search?q={quote_plus(query + ' 보안 취약점 분석 컴플라이언스')}",
                 "pubDate": "실시간 큐레이션",
                 "description": f"안전한 '{query}' 운영 환경을 위한 보안 모범 사례와 설정 점검 리스트입니다."
             },
             {
                 "title": f"클라우드 인프라 기반 '{query}' 스케일아웃 및 성능 최적화",
                 "source": "클라우드 아키텍처",
-                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "link": f"https://www.google.com/search?q={quote_plus(query + ' 클라우드 인프라 성능 최적화')}",
                 "pubDate": "실시간 큐레이션",
                 "description": f"대규모 트래픽 처리를 위해 '{query}' 환경의 병목 지점을 진단하고 리소스를 최적화하는 방안입니다."
             },
             {
                 "title": f"오픈소스 생태계에서의 '{query}' 최신 릴리즈와 커뮤니티 동향",
                 "source": "OpenSource Hub",
-                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "link": f"https://www.google.com/search?q={quote_plus(query + ' 오픈소스 커뮤니티 릴리즈 동향')}",
                 "pubDate": "실시간 큐레이션",
                 "description": f"글로벌 오픈소스 커뮤니티를 중심으로 한 '{query}' 관련 도구 생태계의 빠른 진화 소식입니다."
             },
             {
                 "title": f"데이터 엔지니어링 파이프라인과 '{query}' 통합 실습 사례",
                 "source": "Data Engineering",
-                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "link": f"https://www.google.com/search?q={quote_plus(query + ' 데이터 엔지니어링 파이프라인')}",
                 "pubDate": "실시간 큐레이션",
                 "description": f"현업 데이터 파이프라인에 '{query}'를 연계하여 실시간 데이터 처리 품질을 높인 사례입니다."
             },
             {
                 "title": f"2026 차세대 엔터프라이즈 로드맵과 '{query}'의 핵심 역할",
                 "source": "엔터프라이즈 인사이트",
-                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "link": f"https://www.google.com/search?q={quote_plus(query + ' 2026 엔터프라이즈 로드맵')}",
                 "pubDate": "실시간 큐레이션",
                 "description": f"향후 기술 로드맵 수립 시 IT 리더들이 고려해야 할 '{query}'의 전략적 가치입니다."
             }
@@ -1353,9 +1353,11 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                 if not title and not link:
                     continue
 
-                # 중복 검사
+                # 중복 검사 (제목과 링크가 모두 일치하거나, 링크가 존재하고 동일한 경우)
                 exists = any(
-                    (link and item.get("link") == link) or (title and item.get("title") == title)
+                    (link and item.get("link") == link and title and item.get("title") == title) or
+                    (link and item.get("link") == link and "google.com/search" not in link) or
+                    (title and item.get("title") == title)
                     for item in user_items
                 )
                 if not exists:
@@ -1440,10 +1442,13 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
             scrapbook_db = _load_scrapbook_data()
             user_items = scrapbook_db.get(user_id, [])
 
-            # 동일 링크 또는 동일 제목 기사 중복 여부 확인
+            # 동일 기사 중복 여부 확인 (제목과 링크 복합 검증)
             existing_idx = None
             for idx, item in enumerate(user_items):
-                if (link and item.get("link") == link) or (title and item.get("title") == title):
+                item_title = item.get("title", "").strip()
+                item_link = item.get("link", "").strip()
+                if (title and item_title and title == item_title) or \
+                   (link and item_link and link == item_link and "google.com/search" not in link):
                     existing_idx = idx
                     break
 
