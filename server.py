@@ -50,7 +50,8 @@ ROLE_DEFAULTS = {
     "user": 10,
     "vip": 50,
     "admin": 9999,
-    "blocked": 0
+    "blocked": 0,
+    "withdrawn": 0
 }
 
 # 중복 요청 및 동시 중복 처리 방지 (Deduplication Lock & In-flight Tracker)
@@ -1114,6 +1115,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                     "id": uid,
                     "email": info.get("email") or "익명 (" + uid[:8] + ")",
                     "role": role,
+                    "isWithdrawn": bool(info.get("is_withdrawn") or role == "withdrawn"),
                     "usedToday": used_today,
                     "limit": limit,
                     "remaining": 0 if is_blocked else max(0, limit - used_today),
@@ -1472,28 +1474,32 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                 self._send_json({"error": "시스템 관리자 계정은 탈퇴할 수 없습니다."}, status=HTTPStatus.FORBIDDEN)
                 return
 
-            # 1. Supabase Auth 계정 영구 삭제 시도
+            # 1. Supabase Auth 계정 영구 삭제 시도 (비밀번호 및 로그인 권한 무효화)
             deleted, msg = delete_supabase_user(user_id)
 
-            # 2. 서버 사용량 및 계정 DB에서 영구 삭제
+            # 2. 계정 상태를 'withdrawn'(탈퇴) 상태로 전환하여 로그인 차단 및 이전 이용 기록 보존
             usage_db = _load_usage_data()
             if user_id in usage_db:
-                del usage_db[user_id]
+                usage_db[user_id]["role"] = "withdrawn"
+                usage_db[user_id]["is_blocked"] = True
+                usage_db[user_id]["is_withdrawn"] = True
+                usage_db[user_id]["withdrawn_at"] = now_kst_str()
+                usage_db[user_id]["custom_limit"] = 0
                 _save_usage_data(usage_db)
 
-            # 3. 활동 로그에 탈퇴 및 영구 삭제 기록
+            # 3. 활동 로그에 탈퇴 로그를 명확히 보존 및 기록 (이전 로그 영구 보존)
             add_activity_log(
                 user_id=user_id,
                 email=user_email,
                 action="USER_WITHDRAW",
-                details=f"회원 탈퇴 요청 승인: 아이디({user_email}) 및 비밀번호/사용데이터 영구 파기 완료 ({msg})",
+                details=f"회원 탈퇴 완료: 이전 활동 기록 및 감사 로그는 영구 보존되며, 로그인 계정 정보는 파기됨 ({msg})",
                 category="auth",
                 ip=client_ip
             )
 
             self._send_json({
                 "success": True,
-                "message": "회원 탈퇴가 완료되었습니다. 계정 정보와 비밀번호가 영구 삭제되었습니다."
+                "message": "회원 탈퇴가 완료되었습니다. 이전 이용 기록과 탈퇴 로그는 안전하게 보존되며, 로그인 계정은 삭제되었습니다."
             })
             return
 

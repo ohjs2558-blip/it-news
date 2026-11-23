@@ -548,9 +548,15 @@
 
                 tbody.innerHTML = users.map(user => {
                     const userRole = (user.role || 'user').toLowerCase();
+                    const isWithdrawn = user.isWithdrawn || userRole === 'withdrawn';
 
                     // 권한 선택 셀렉트 박스
-                    const roleSelect = `
+                    const roleSelect = isWithdrawn ? `
+                        <span class="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/30 font-bold text-xs inline-flex items-center gap-1">
+                            <span>🚫</span>
+                            <span>탈퇴 회원 (WITHDRAWN)</span>
+                        </span>
+                    ` : `
                         <select onchange="changeRole('${user.id}', this.value)" class="bg-dark-950 border border-dark-800 rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none focus:border-sky-500 ${
                             userRole === 'admin' ? 'text-amber-400 border-amber-500/30' :
                             userRole === 'vip' ? 'text-purple-400 border-purple-500/30' :
@@ -565,9 +571,12 @@
                     `;
 
                     return `
-                        <tr class="hover:bg-dark-850/50 transition">
+                        <tr class="hover:bg-dark-850/50 transition ${isWithdrawn ? 'bg-rose-950/10' : ''}">
                             <td class="py-3 px-4 font-mono">
-                                <div class="font-bold text-slate-200">${escapeHtml(user.email)}</div>
+                                <div class="font-bold ${isWithdrawn ? 'text-slate-400 line-through' : 'text-slate-200'}">
+                                    ${escapeHtml(user.email)}
+                                    ${isWithdrawn ? '<span class="text-[10px] ml-1.5 px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 no-underline font-normal inline-block">탈퇴됨</span>' : ''}
+                                </div>
                                 <div class="text-[10px] text-slate-500 truncate max-w-[180px]">${escapeHtml(user.id)}</div>
                             </td>
                             <td class="py-3 px-4">
@@ -643,6 +652,12 @@
                         case 'BLOCKED_REQUEST':
                         case 'USER_BLOCK_TOGGLE':
                             actionBadge = '<span class="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold text-[10px]">보안/차단</span>';
+                            break;
+                        case 'USER_WITHDRAW':
+                            actionBadge = '<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold text-[10px]">회원탈퇴</span>';
+                            break;
+                        case 'EMAIL_NEWS_SEND':
+                            actionBadge = '<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold text-[10px]">이메일발송</span>';
                             break;
                         default:
                             actionBadge = `<span class="px-2 py-0.5 rounded-full bg-dark-850 text-slate-400 text-[10px]">${escapeHtml(l.action)}</span>`;
