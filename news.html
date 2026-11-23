@@ -1782,9 +1782,18 @@
             return false;
         }
 
+        // 중복 요청 방지 플래그 (Debounce & Double-click Prevention)
+        let isGeminiRequesting = false;
+
         async function requestGemini(query) {
-            query = query.trim();
+            query = query ? query.trim() : '';
             if (!query) return;
+
+            // 이미 요청 처리 중인 경우 중복 실행 차단
+            if (isGeminiRequesting) {
+                console.warn('요청이 이미 진행 중입니다. 중복 클릭이 무시되었습니다.');
+                return;
+            }
 
             // [자연어 명령 감지] "N번 기사 나중에 볼래" 등
             if (currentArticles.length > 0 && tryHandleVoiceOrChatScrapCommand(query)) {
@@ -1799,6 +1808,7 @@
                 return;
             }
 
+            isGeminiRequesting = true;
             // UI 로딩 상태 변경
             button.disabled = true;
             input.disabled = true;
@@ -1860,6 +1870,7 @@
                 statusBadge.textContent = '안내';
                 resultContent.textContent = `⚠️ ${err.message}`;
             } finally {
+                isGeminiRequesting = false;
                 button.disabled = false;
                 input.disabled = false;
                 input.focus();

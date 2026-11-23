@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import time
+import threading
 from datetime import datetime, date
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -28,6 +29,10 @@ ROLE_DEFAULTS = {
     "admin": 9999,
     "blocked": 0
 }
+
+# 중복 요청 및 동시 중복 처리 방지 (Deduplication Lock & In-flight Tracker)
+_active_chat_requests = set()
+_active_chat_lock = threading.Lock()
 
 # .env 파일 수동 로드 (외부 패키지 의존성 방지 및 호환성 확보)
 def load_env_file():
@@ -1296,22 +1301,37 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                 }, status=HTTPStatus.TOO_MANY_REQUESTS)
                 return
 
-            # 1. 뉴스 원문 기사 검색 (8건)
-            articles = fetch_news_articles(query, limit=8)
+            # [동시 중복 실행 방지] 동일 사용자의 중복 요청 또는 연타 방지
+            request_key = f"{user_id}:{query}"
+            with _active_chat_lock:
+                if request_key in _active_chat_requests:
+                    self._send_json({
+                        "error": "현재 동일한 요청을 분석 중입니다. 잠시만 기다려 주세요.",
+                        "code": "REQUEST_IN_PROGRESS"
+                    }, status=HTTPStatus.TOO_MANY_REQUESTS)
+                    return
+                _active_chat_requests.add(request_key)
 
-            # 2. 뉴스 원문 및 질의 기반 Gemini AI 요약 생성
-            answer_text = generate_gemini_summary(query, articles)
+            try:
+                # 1. 뉴스 원문 기사 검색 (8건)
+                articles = fetch_news_articles(query, limit=8)
 
-            # 3. 사용자 호출 횟수 1 차감 및 기록
-            record_user_request(user_id, user_email, query, client_ip=client_ip)
-            updated_usage = get_user_usage(user_id, user_email)
+                # 2. 뉴스 원문 및 질의 기반 Gemini AI 요약 생성
+                answer_text = generate_gemini_summary(query, articles)
 
-            self._send_json({
-                "answer": answer_text,
-                "articles": articles,
-                "usage": updated_usage
-            })
-            return
+                # 3. 사용자 호출 횟수 1 차감 및 기록
+                record_user_request(user_id, user_email, query, client_ip=client_ip)
+                updated_usage = get_user_usage(user_id, user_email)
+
+                self._send_json({
+                    "answer": answer_text,
+                    "articles": articles,
+                    "usage": updated_usage
+                })
+                return
+            finally:
+                with _active_chat_lock:
+                    _active_chat_requests.discard(request_key)
 
         self.send_error(HTTPStatus.NOT_FOUND, "Not Found")
 
