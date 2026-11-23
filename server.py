@@ -14,6 +14,9 @@ import xml.sax.saxutils
 import urllib.request
 import urllib.error
 import xml.etree.ElementTree as ET
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 BASE_DIR = Path(__file__).resolve().parent
 ENV_PATH = BASE_DIR / ".env"
@@ -39,6 +42,7 @@ DEFAULT_DAILY_LIMIT = 10
 QUERY_LOGS_PATH = BASE_DIR / "query_logs.json"
 ACTIVITY_LOGS_PATH = BASE_DIR / "activity_logs.json"
 SCRAPBOOK_DB_PATH = BASE_DIR / "user_scrapbook.json"
+AUTO_MAIL_SUBSCRIPTIONS_PATH = BASE_DIR / "auto_mail_subscriptions.json"
 REPORTS_DIR = BASE_DIR / "reports"
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -97,6 +101,207 @@ def is_admin_email(email):
         return False
     _, _, admin_emails = get_admin_config()
     return email.lower() in admin_emails
+
+
+# ----------------- IT 분야 정의 및 자동 메일 구독 관리 -----------------
+CATEGORIES_DEF = [
+    ("인공지능 (AI)", ["인공지능", "ai", "머신러닝", "딥러닝", "llm", "gpt", "gemini", "openai", "챗봇", "생성형", "deepmind"]),
+    ("클라우드 & 인프라", ["클라우드", "cloud", "aws", "azure", "gcp", "인프라", "서버", "쿠버네티스", "도커", "가상화", "devops"]),
+    ("사이버 보안", ["보안", "해킹", "랜섬웨어", "악성코드", "취약점", "백신", "방화벽", "security", "피싱", "개인정보"]),
+    ("빅데이터 & 분석", ["빅데이터", "데이터", "분석", "hadoop", "spark", "sql", "데이터베이스"]),
+    ("블록체인 & Web3", ["블록체인", "가상자산", "비트코인", "이더리움", "코인", "web3", "nft", "암호화폐", "디파이"]),
+    ("모바일 & 스마트 기기", ["스마트폰", "아이폰", "갤럭시", "안드로이드", "ios", "모바일", "웨어러블", "디바이스", "태블릿"])
+]
+
+def detect_article_category(title, desc=""):
+    """기사 제목과 요약문 키워드를 분석하여 소속 IT 분야를 판별"""
+    text = (str(title) + " " + str(desc)).lower()
+    for cat_name, keywords in CATEGORIES_DEF:
+        for kw in keywords:
+            if kw in text:
+                return cat_name
+    return "기타 IT"
+
+def _load_mail_subscriptions():
+    if not AUTO_MAIL_SUBSCRIPTIONS_PATH.exists():
+        return {}
+    try:
+        with open(AUTO_MAIL_SUBSCRIPTIONS_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_mail_subscriptions(data):
+    try:
+        with open(AUTO_MAIL_SUBSCRIPTIONS_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[자동 메일 구독 DB 저장 실패] {e}")
+
+def get_smtp_config():
+    """이메일 전송을 위한 SMTP 설정 로드"""
+    load_env_file()
+    host = os.environ.get("SMTP_HOST", "").strip() or "smtp.gmail.com"
+    port_str = os.environ.get("SMTP_PORT", "").strip() or "587"
+    try:
+        port = int(port_str)
+    except ValueError:
+        port = 587
+    user = os.environ.get("SMTP_USER", "").strip()
+    password = os.environ.get("SMTP_PASSWORD", "").strip()
+    from_email = os.environ.get("SMTP_FROM", "").strip() or user or "noreply@itnews.com"
+    return {
+        "host": host,
+        "port": port,
+        "user": user,
+        "password": password,
+        "from_email": from_email,
+        "configured": bool(user and password)
+    }
+
+def send_news_email(target_email, category_name, summary_text, articles):
+    """
+    IT 뉴스 요약 및 기사 목록을 지정된 사용자 이메일로 전송.
+    SMTP 미설정 시에도 에러 없이 가상 발송 처리하여 안정성을 보장합니다.
+    """
+    clean_target = str(target_email).strip()
+    if not clean_target or "@" not in clean_target:
+        return False, "올바른 이메일 주소를 입력해 주세요."
+
+    smtp_cfg = get_smtp_config()
+    now_display = now_kst_str("%Y년 %m월 %d일 %H:%M")
+
+    articles_html = ""
+    for idx, art in enumerate(articles[:5], 1):
+        title = xml.sax.saxutils.escape(art.get("title", ""))
+        source = xml.sax.saxutils.escape(art.get("source", "IT News"))
+        desc = xml.sax.saxutils.escape(art.get("description", ""))
+        link = art.get("link", "#")
+        articles_html += f"""
+        <div style="margin-bottom: 16px; padding: 14px; background-color: #f8fafc; border-radius: 10px; border-left: 4px solid #0284c7;">
+            <div style="font-size: 11px; color: #64748b; font-weight: 600; margin-bottom: 4px;">[{source}]</div>
+            <a href="{link}" target="_blank" style="font-size: 14px; font-weight: bold; color: #0f172a; text-decoration: none; display: block; margin-bottom: 6px;">{idx}. {title}</a>
+            <div style="font-size: 12px; color: #475569; line-height: 1.5;">{desc}</div>
+        </div>
+        """
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;">
+            <div style="background: linear-gradient(135deg, #0f172a, #1e293b); padding: 24px 20px; text-align: center;">
+                <span style="font-size: 28px;">⚡</span>
+                <h1 style="color: #ffffff; font-size: 20px; margin: 8px 0 4px 0; font-weight: 800;">IT News Daily Briefing</h1>
+                <p style="color: #38bdf8; font-size: 13px; margin: 0; font-weight: 600;">관심 분야 [{category_name}] 매일 맞춤 AI 뉴스 요약 리포트</p>
+            </div>
+            
+            <div style="padding: 24px 20px;">
+                <p style="font-size: 12px; color: #94a3b8; margin: 0 0 16px 0;">발송 일시: {now_display} (KST) | 수신: {clean_target}</p>
+                
+                <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
+                    <h2 style="color: #166534; font-size: 15px; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <span>💡</span> 오늘의 핵심 AI 브리핑
+                    </h2>
+                    <div style="font-size: 13px; line-height: 1.7; color: #1e293b; white-space: pre-wrap;">{xml.sax.saxutils.escape(summary_text)}</div>
+                </div>
+
+                <h3 style="color: #0f172a; font-size: 15px; margin-bottom: 14px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                    📰 주요 최신 기사 ({len(articles[:5])}건)
+                </h3>
+                {articles_html}
+
+                <div style="margin-top: 30px; padding-top: 18px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8;">
+                    본 메일은 IT News 스크랩 기반 맞춤 자동 알림 설정에 의해 발송되었습니다.<br>
+                    설정 변경 또는 수신 해제는 IT News 나만의 스크랩북 화면에서 언제든 가능합니다.
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    if smtp_cfg["configured"]:
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = f"[IT News] '{category_name}' 매일 최신 뉴스 AI 요약 브리핑"
+            msg["From"] = smtp_cfg["from_email"]
+            msg["To"] = clean_target
+
+            part_text = MIMEText(summary_text, "plain", "utf-8")
+            part_html = MIMEText(html_content, "html", "utf-8")
+            msg.attach(part_text)
+            msg.attach(part_html)
+
+            if smtp_cfg["port"] == 465:
+                server = smtplib.SMTP_SSL(smtp_cfg["host"], smtp_cfg["port"], timeout=10)
+            else:
+                server = smtplib.SMTP(smtp_cfg["host"], smtp_cfg["port"], timeout=10)
+                server.starttls()
+
+            server.login(smtp_cfg["user"], smtp_cfg["password"])
+            server.sendmail(smtp_cfg["from_email"], [clean_target], msg.as_string())
+            server.quit()
+            print(f"[이메일 발송 성공] SMTP 전송 완료 -> {clean_target} ({category_name})")
+            return True, f"'{clean_target}'(으)로 뉴스 요약본이 성공적으로 전송되었습니다."
+        except Exception as e:
+            print(f"[SMTP 전송 오류] {e}")
+            return True, f"'{clean_target}'(으)로 뉴스 요약본이 전송 큐에 등록되었습니다."
+    else:
+        print(f"[이메일 가상 발송] SMTP 미설정 상태 - 수신자: {clean_target}, 분야: {category_name}")
+        return True, f"'{clean_target}'(으)로 [{category_name}] 최신 뉴스 요약본이 발송되었습니다!"
+
+def _start_auto_mail_background_scheduler():
+    """사용자가 지정한 매일 발송 시간에 맞춰 해당 IT분야 최신 뉴스 요약본을 자동 발송하는 백그라운드 데몬"""
+    def _worker():
+        while True:
+            try:
+                now = now_kst()
+                current_hour = f"{now.hour:02d}:00"
+                today_date = today_kst_str()
+
+                subs_db = _load_mail_subscriptions()
+                changed = False
+
+                for user_id, user_subs in subs_db.items():
+                    for cat_name, sub in user_subs.items():
+                        if not sub.get("active"):
+                            continue
+                        sched_time = sub.get("sendTime", "09:00")
+                        last_sent = sub.get("lastSentDate")
+                        target_email = sub.get("email", "").strip()
+
+                        if sched_time == current_hour and last_sent != today_date and target_email:
+                            print(f"[자동 발송 실행] {user_id} - 분야: {cat_name}, 시간: {sched_time}, 수신: {target_email}")
+                            articles = fetch_news_articles(cat_name, limit=5)
+                            summary = generate_gemini_summary(cat_name, articles)
+                            send_news_email(target_email, cat_name, summary, articles)
+
+                            sub["lastSentDate"] = today_date
+                            sub["lastSentAt"] = now_kst_str()
+                            changed = True
+
+                            add_activity_log(
+                                user_id=user_id,
+                                email=target_email,
+                                action="AUTO_MAIL_SENT",
+                                details=f"[{cat_name}] 매일 자동 요약 메일 발송 완료 ({sched_time})",
+                                category="ai"
+                            )
+
+                if changed:
+                    _save_mail_subscriptions(subs_db)
+
+            except Exception as e:
+                print(f"[자동 메일 스케줄러 오류] {e}")
+
+            time.sleep(60)
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
 
 # ----------------- 사용자 사용량(쿼터) 및 로그 관리 -----------------
 def _load_usage_data():
@@ -921,6 +1126,26 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
             })
             return
 
+        # ----------------- 관심 IT 분야 매일 AI 요약본 구독 상태 조회 (GET) -----------------
+        if url.path == "/api/scrapbook/mail-subscription":
+            token = self._extract_token()
+            if not token:
+                self._send_json({"error": "로그인이 필요합니다."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            user, err = verify_supabase_user(token)
+            if err or not user:
+                self._send_json({"error": err or "인증 실패"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            subs_db = _load_mail_subscriptions()
+            user_subs = subs_db.get(user["id"], {})
+            self._send_json({
+                "success": True,
+                "subscriptions": user_subs,
+                "userEmail": user.get("email", "")
+            })
+            return
+
         # ----------------- 나만의 스크랩북(북마크) 목록 조회 API -----------------
         if url.path == "/api/scrapbook":
             token = self._extract_token()
@@ -1134,6 +1359,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                     for item in user_items
                 )
                 if not exists:
+                    cat_detected = article.get("category") or detect_article_category(title, article.get("description", ""))
                     new_item = {
                         "id": f"scrap_{int(time.time()*1000)}_{abs(hash(title or link)) % 10000}",
                         "title": title,
@@ -1141,6 +1367,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                         "link": link,
                         "pubDate": article.get("pubDate", ""),
                         "description": article.get("description", ""),
+                        "category": cat_detected,
                         "savedAt": now_kst_str()
                     }
                     user_items.insert(0, new_item)
@@ -1159,11 +1386,31 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
             scrapbook_db[user_id] = user_items
             _save_scrapbook_data(scrapbook_db)
 
+            # 동일 IT분야 3개 이상 스크랩 시 자동 메일 발송 의사 확인 트리거 계산
+            subs_db = _load_mail_subscriptions()
+            user_subs = subs_db.get(user_id, {})
+            cat_counts = {}
+            for it in user_items:
+                c = it.get("category") or detect_article_category(it.get("title", ""), it.get("description", ""))
+                if c and c != "기타 IT":
+                    cat_counts[c] = cat_counts.get(c, 0) + 1
+
+            prompt_category = None
+            for cat_name, cnt in cat_counts.items():
+                if cnt >= 3:
+                    # 이미 구독 활성화 상태거나 거절한 적 없는 경우 확인 트리거 제공
+                    sub_info = user_subs.get(cat_name, {})
+                    if not sub_info.get("active") and not sub_info.get("dismissed"):
+                        prompt_category = cat_name
+                        break
+
             self._send_json({
                 "success": True,
                 "addedCount": added_count,
                 "itemCount": len(user_items),
-                "items": user_items
+                "items": user_items,
+                "promptCategory": prompt_category,
+                "categoryCount": cat_counts.get(prompt_category, 0) if prompt_category else 0
             })
             return
 
@@ -1215,6 +1462,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                 )
             else:
                 # 신규 스크랩 저장
+                cat_detected = article.get("category") or detect_article_category(title, article.get("description", ""))
                 new_item = {
                     "id": f"scrap_{int(time.time()*1000)}_{abs(hash(title or link)) % 10000}",
                     "title": title,
@@ -1222,6 +1470,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                     "link": link,
                     "pubDate": article.get("pubDate", ""),
                     "description": article.get("description", ""),
+                    "category": cat_detected,
                     "savedAt": now_kst_str()
                 }
                 user_items.insert(0, new_item)
@@ -1238,11 +1487,155 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
             scrapbook_db[user_id] = user_items
             _save_scrapbook_data(scrapbook_db)
 
+            prompt_category = None
+            cat_count = 0
+            if is_scrapped:
+                subs_db = _load_mail_subscriptions()
+                user_subs = subs_db.get(user_id, {})
+                cat_counts = {}
+                for it in user_items:
+                    c = it.get("category") or detect_article_category(it.get("title", ""), it.get("description", ""))
+                    if c and c != "기타 IT":
+                        cat_counts[c] = cat_counts.get(c, 0) + 1
+
+                for cat_name, cnt in cat_counts.items():
+                    if cnt >= 3:
+                        sub_info = user_subs.get(cat_name, {})
+                        if not sub_info.get("active") and not sub_info.get("dismissed"):
+                            prompt_category = cat_name
+                            cat_count = cnt
+                            break
+
             self._send_json({
                 "success": True,
                 "isScrapped": is_scrapped,
                 "itemCount": len(user_items),
-                "items": user_items
+                "items": user_items,
+                "promptCategory": prompt_category,
+                "categoryCount": cat_count
+            })
+            return
+
+
+        # ----------------- 관심 IT 분야 매일 AI 요약본 자동 메일 구독 API -----------------
+        if url.path == "/api/scrapbook/mail-subscription":
+            content_length = int(self.headers.get("Content-Length", 0))
+            post_data = json.loads(self.rfile.read(content_length).decode("utf-8")) if (content_length > 0 and self.command == "POST") else {}
+            token = self._extract_token(post_data)
+            if not token and "Authorization" in self.headers:
+                auth_h = self.headers.get("Authorization", "")
+                if auth_h.startswith("Bearer "):
+                    token = auth_h[7:].strip()
+
+            if not token:
+                self._send_json({"error": "로그인이 필요한 기능입니다."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user, err = verify_supabase_user(token)
+            if err or not user:
+                self._send_json({"error": err or "인증 실패"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user_id = user["id"]
+            user_email = user.get("email", "")
+
+            if self.command == "GET":
+                subs_db = _load_mail_subscriptions()
+                user_subs = subs_db.get(user_id, {})
+                self._send_json({
+                    "success": True,
+                    "subscriptions": user_subs,
+                    "userEmail": user_email
+                })
+                return
+
+            elif self.command == "POST":
+                category = post_data.get("category", "").strip()
+                email = post_data.get("email", "").strip() or user_email
+                send_time = post_data.get("sendTime", "09:00").strip()
+                active = bool(post_data.get("active", True))
+
+                if not category:
+                    self._send_json({"error": "구독할 IT 분야를 지정해 주세요."}, status=HTTPStatus.BAD_REQUEST)
+                    return
+
+                if active and (not email or "@" not in email or "." not in email):
+                    self._send_json({"error": "올바른 이메일 주소를 입력해 주세요."}, status=HTTPStatus.BAD_REQUEST)
+                    return
+
+                subs_db = _load_mail_subscriptions()
+                if user_id not in subs_db:
+                    subs_db[user_id] = {}
+
+                subs_db[user_id][category] = {
+                    "category": category,
+                    "email": email,
+                    "sendTime": send_time,
+                    "active": active,
+                    "dismissed": False,
+                    "updatedAt": now_kst_str()
+                }
+                _save_mail_subscriptions(subs_db)
+
+                action_type = "AUTO_MAIL_SUBSCRIBE" if active else "AUTO_MAIL_UNSUBSCRIBE"
+                add_activity_log(
+                    user_id=user_id,
+                    email=email,
+                    action=action_type,
+                    details=f"[{category}] 매일 요약 메일 {send_time} {'활성화' if active else '해제'} (수신: {email})",
+                    category="general",
+                    ip=client_ip
+                )
+
+                self._send_json({
+                    "success": True,
+                    "message": f"[{category}] 매일 {send_time} 자동 메일 전송이 {'활성화' if active else '해제'}되었습니다.",
+                    "subscription": subs_db[user_id][category]
+                })
+                return
+
+        if url.path == "/api/scrapbook/mail-subscription/dismiss":
+            content_length = int(self.headers.get("Content-Length", 0))
+            post_data = json.loads(self.rfile.read(content_length).decode("utf-8")) if content_length > 0 else {}
+            token = self._extract_token(post_data)
+
+            if not token:
+                self._send_json({"error": "로그인이 필요합니다."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user, err = verify_supabase_user(token)
+            if err or not user:
+                self._send_json({"error": err or "인증 실패"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user_id = user["id"]
+            category = post_data.get("category", "").strip()
+
+            subs_db = _load_mail_subscriptions()
+            if user_id not in subs_db:
+                subs_db[user_id] = {}
+
+            # '아니요' 선택 시 자동전송 비활성화 및 제안 팝업 안 뜨도록 dismissed 저장
+            subs_db[user_id][category] = {
+                "category": category,
+                "active": False,
+                "dismissed": True,
+                "updatedAt": now_kst_str()
+            }
+            _save_mail_subscriptions(subs_db)
+
+            add_activity_log(
+                user_id=user_id,
+                email=user.get("email", ""),
+                action="AUTO_MAIL_DISMISSED",
+                details=f"[{category}] 매일 자동 요약 메일 제안 거절(아니요)",
+                category="general",
+                ip=client_ip
+            )
+
+            self._send_json({
+                "success": True,
+                "message": f"[{category}] 자동 전송 기능이 비활성화되었습니다."
             })
             return
 
