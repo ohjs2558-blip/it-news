@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT News - 관리자 대시보드</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            950: '#070a13',
+                            900: '#0f172a',
+                            850: '#1e293b',
+                            800: '#334155',
+                            750: '#475569'
+                        },
+                        brand: {
+                            500: '#0284c7',
+                            accent: '#38bdf8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Pretendard', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    </style>
+</head>
+<body class="bg-dark-950 text-slate-100 min-h-screen flex flex-col selection:bg-brand-accent selection:text-dark-950">
+
+    <!-- 상단 헤더 -->
+    <header class="border-b border-dark-850 bg-dark-900/90 backdrop-blur sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-sm text-sky-400 border border-dark-750">
+                    ADM
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                        IT News <span class="text-[11px] px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 font-semibold">관리자 센터</span>
+                    </h1>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <span id="admin-badge" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="admin-email-text">관리자 인증됨</span>
+                </span>
+                <a href="/" class="text-xs px-3.5 py-1.5 rounded-xl bg-dark-850 hover:bg-dark-800 text-slate-300 hover:text-white border border-dark-800 font-medium transition flex items-center gap-1.5">
+                    <span>메인 서비스로 가기</span>
+                </a>
+                <button id="admin-logout-btn" class="text-xs px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition font-medium">
+                    로그아웃
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 관리자 아이디 / 비밀번호 로그인 모달 -->
+    <div id="auth-guard-modal" class="hidden fixed inset-0 z-50 bg-dark-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-dark-900 border border-dark-850 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 rounded-2xl bg-dark-850 border border-dark-800 text-sky-400 text-lg font-bold flex items-center justify-center mx-auto">
+                    ADM
+                </div>
+                <h3 class="text-lg font-bold text-white">관리자 로그인</h3>
+                <p class="text-xs text-slate-400">관리자 계정의 아이디와 비밀번호를 입력해주세요.</p>
+            </div>
+
+            <div id="login-error-alert" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs"></div>
+
+            <form id="master-login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1" for="admin-username">아이디</label>
+                    <input type="text" id="admin-username" required placeholder="admin" class="w-full bg-dark-950 border border-dark-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1" for="admin-password">비밀번호</label>
+                    <input type="password" id="admin-password" required placeholder="비밀번호 입력" class="w-full bg-dark-950 border border-dark-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold text-sm shadow-lg shadow-sky-500/20 transition">
+                    로그인
+                </button>
+            </form>
+
+            <div class="text-center pt-2">
+                <a href="/" class="text-xs text-slate-500 hover:text-slate-300 underline">메인 서비스로 돌아가기</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 대시보드 본문 -->
+    <main id="admin-content" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
+
+        <!-- 핵심 통계 카드 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-dark-900 border border-dark-850 rounded-2xl p-5 space-y-2">
+                <div class="text-xs text-slate-400">등록 사용자</div>
+                <div class="text-2xl sm:text-3xl font-extrabold text-white" id="stat-total-users">-</div>
+                <div class="text-[11px] text-slate-500">전체 활성 회원 수</div>
+            </div>
+
+            <div class="bg-dark-900 border border-dark-850 rounded-2xl p-5 space-y-2">
+                <div class="text-xs text-sky-400">오늘 AI 질문 수</div>
+                <div class="text-2xl sm:text-3xl font-extrabold text-sky-400" id="stat-today-queries">-</div>
+                <div class="text-[11px] text-slate-500">오늘 자정 이후 호출된 쿼리</div>
+            </div>
+
+            <div class="bg-dark-900 border border-dark-850 rounded-2xl p-5 space-y-2">
+                <div class="text-xs text-indigo-400">누적 AI 질문 수</div>
+                <div class="text-2xl sm:text-3xl font-extrabold text-indigo-400" id="stat-total-queries">-</div>
+                <div class="text-[11px] text-slate-500">전체 생성된 브리핑 총합</div>
+            </div>
+
+            <div class="bg-dark-900 border border-dark-850 rounded-2xl p-5 space-y-2">
+                <div class="text-xs text-emerald-400">Gemini AI 모델</div>
+                <div class="text-lg font-bold text-emerald-400 truncate" id="stat-gemini-model">-</div>
+                <div class="text-[11px] text-emerald-500/80 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>API 키 정상 연동</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. 사용자 계정별 권한(Role) 및 일일 한도 제어 섹션 -->
+        <section class="bg-dark-900 border border-dark-850 rounded-2xl shadow-xl overflow-hidden space-y-4">
+            <div class="p-5 border-b border-dark-850 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <span>계정별 권한 부여 및 Gemini 사용량 제어</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">
+                        각 계정의 권한(<strong class="text-sky-400">일반 회원</strong>, <strong class="text-purple-400">VIP</strong>, <strong class="text-amber-400">관리자</strong>, <strong class="text-rose-400">차단</strong>)을 즉시 부여하고 일일 한도를 조정합니다.
+                    </p>
+                </div>
+                <button id="refresh-users-btn" class="text-xs px-3 py-1.5 rounded-xl bg-dark-850 hover:bg-dark-800 text-sky-400 border border-dark-800 hover:border-sky-500/30 transition flex items-center gap-1.5 self-start sm:self-auto">
+                    <span>새로고침</span>
+                </button>
+            </div>
+
+            <!-- 권한 안내 뱃지 팁 -->
+            <div class="px-5 py-2.5 bg-dark-950/60 border-b border-dark-850 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                <span class="text-[11px] font-semibold text-slate-300">권한별 기본 제공:</span>
+                <span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[11px]">USER: 10회/일</span>
+                <span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 text-[11px]">VIP: 50회/일</span>
+                <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[11px]">ADMIN: 무제한</span>
+                <span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20 text-[11px]">BLOCKED: 차단(0회)</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-dark-950/50 text-slate-400 uppercase text-[10px] tracking-wider border-b border-dark-850">
+                        <tr>
+                            <th class="py-3 px-4">사용자 이메일 / ID</th>
+                            <th class="py-3 px-4">부여된 권한 (Role)</th>
+                            <th class="py-3 px-4">오늘 사용량 / 한도</th>
+                            <th class="py-3 px-4">남은 질문</th>
+                            <th class="py-3 px-4">최근 활동</th>
+                            <th class="py-3 px-4 text-right">관리 작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body" class="divide-y divide-dark-850">
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-slate-500">데이터를 불러오는 중입니다...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 2. 전체 사용자 활동 감사 로그 (Audit Logs) 섹션 -->
+        <section class="bg-dark-900 border border-dark-850 rounded-2xl shadow-xl overflow-hidden space-y-4">
+            <div class="p-5 border-b border-dark-850 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <span>사용자 활동 및 보안 감사 로그 (Activity Logs)</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">로그인, 회원가입, AI 질문 검색, 관리자의 권한 변경 내역을 실시간으로 추적합니다.</p>
+                </div>
+                
+                <!-- 카테고리 필터 탭 -->
+                <div class="flex items-center gap-1 bg-dark-950 p-1 rounded-xl border border-dark-800 text-xs self-start sm:self-auto" id="log-filter-tabs">
+                    <button data-cat="all" class="px-2.5 py-1 rounded-lg bg-sky-500 text-white font-semibold transition log-tab-btn">전체</button>
+                    <button data-cat="ai" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition log-tab-btn">AI 검색</button>
+                    <button data-cat="auth" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition log-tab-btn">인증/접속</button>
+                    <button data-cat="admin" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition log-tab-btn">관리자작업</button>
+                    <button data-cat="security" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition log-tab-btn">보안/차단</button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-dark-950/50 text-slate-400 uppercase text-[10px] tracking-wider border-b border-dark-850">
+                        <tr>
+                            <th class="py-3 px-4">시간</th>
+                            <th class="py-3 px-4">활동 유형</th>
+                            <th class="py-3 px-4">사용자</th>
+                            <th class="py-3 px-4">상세 활동 내용</th>
+                            <th class="py-3 px-4">IP 주소</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-table-body" class="divide-y divide-dark-850">
+                        <tr>
+                            <td colspan="5" class="py-6 text-center text-slate-500">활동 기록을 불러오는 중입니다...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        let adminToken = localStorage.getItem('it_news_admin_token') || '';
+        let supabaseClient = null;
+        let currentLogCategory = 'all';
+
+        const authModal = document.getElementById('auth-guard-modal');
+        const loginForm = document.getElementById('master-login-form');
+        const loginErrorAlert = document.getElementById('login-error-alert');
+        const adminEmailText = document.getElementById('admin-email-text');
+        const logoutBtn = document.getElementById('admin-logout-btn');
+        const refreshBtn = document.getElementById('refresh-users-btn');
+
+        async function initAuth() {
+            if (adminToken) {
+                const testRes = await fetch('/api/admin/stats', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                if (testRes.ok) {
+                    authModal.classList.add('hidden');
+                    loadDashboardData();
+                    return;
+                }
+            }
+
+            try {
+                const res = await fetch('/api/config');
+                const config = await res.json();
+                if (config.supabaseUrl && config.supabaseAnonKey && window.supabase) {
+                    supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session && session.access_token) {
+                        const userRes = await fetch('/api/auth/me', {
+                            headers: { 'Authorization': `Bearer ${session.access_token}` }
+                        });
+                        if (userRes.ok) {
+                            const userData = await userRes.json();
+                            if (userData.user && userData.user.isAdmin) {
+                                adminToken = session.access_token;
+                                adminEmailText.textContent = `${userData.user.email} (관리자)`;
+                                authModal.classList.add('hidden');
+                                loadDashboardData();
+                                return;
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+
+            authModal.classList.remove('hidden');
+        }
+
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                loginErrorAlert.classList.add('hidden');
+                const username = document.getElementById('admin-username').value.trim();
+                const password = document.getElementById('admin-password').value.trim();
+
+                try {
+                    const res = await fetch('/api/admin/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        loginErrorAlert.textContent = data.error || '아이디 또는 비밀번호가 올바르지 않습니다.';
+                        loginErrorAlert.classList.remove('hidden');
+                        return;
+                    }
+
+                    adminToken = data.token;
+                    localStorage.setItem('it_news_admin_token', adminToken);
+                    adminEmailText.textContent = `${data.user.username || 'admin'} (관리자)`;
+                    authModal.classList.add('hidden');
+                    loadDashboardData();
+                } catch (err) {
+                    loginErrorAlert.textContent = '로그인 중 오류가 발생했습니다: ' + err.message;
+                    loginErrorAlert.classList.remove('hidden');
+                }
+            });
+        }
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                if (confirm('관리자 세션을 로그아웃 하시겠습니까?')) {
+                    localStorage.removeItem('it_news_admin_token');
+                    if (supabaseClient) {
+                        try { await supabaseClient.auth.signOut(); } catch(e){}
+                    }
+                    window.location.href = '/';
+                }
+            });
+        }
+
+        async function loadDashboardData() {
+            if (!adminToken) return;
+
+            try {
+                const res = await fetch('/api/admin/stats', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                if (res.ok) {
+                    const { stats } = await res.json();
+                    document.getElementById('stat-total-users').textContent = `${stats.totalUsers}명`;
+                    document.getElementById('stat-today-queries').textContent = `${stats.todayQueries}회`;
+                    document.getElementById('stat-total-queries').textContent = `${stats.totalQueries}회`;
+                    document.getElementById('stat-gemini-model').textContent = stats.geminiModel;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+
+            loadUsers();
+            loadLogs();
+        }
+
+        // 사용자 목록 및 권한 렌더링
+        async function loadUsers() {
+            const tbody = document.getElementById('users-table-body');
+            try {
+                const res = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                if (!res.ok) throw new Error('사용자 목록 조회 실패');
+                const { users } = await res.json();
+
+                if (!users || users.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-500">등록된 사용자 활동 기록이 없습니다.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = users.map(user => {
+                    const userRole = (user.role || 'user').toLowerCase();
+
+                    // 권한 선택 셀렉트 박스
+                    const roleSelect = `
+                        <select onchange="changeRole('${user.id}', this.value)" class="bg-dark-950 border border-dark-800 rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none focus:border-sky-500 ${
+                            userRole === 'admin' ? 'text-amber-400 border-amber-500/30' :
+                            userRole === 'vip' ? 'text-purple-400 border-purple-500/30' :
+                            userRole === 'blocked' ? 'text-rose-400 border-rose-500/30' :
+                            'text-sky-400 border-sky-500/30'
+                        }">
+                            <option value="user" ${userRole === 'user' ? 'selected' : ''}>일반 회원 (USER)</option>
+                            <option value="vip" ${userRole === 'vip' ? 'selected' : ''}>VIP 회원 (50회)</option>
+                            <option value="admin" ${userRole === 'admin' ? 'selected' : ''}>관리자 (ADMIN)</option>
+                            <option value="blocked" ${userRole === 'blocked' ? 'selected' : ''}>이용 정지 (BLOCKED)</option>
+                        </select>
+                    `;
+
+                    return `
+                        <tr class="hover:bg-dark-850/50 transition">
+                            <td class="py-3 px-4 font-mono">
+                                <div class="font-bold text-slate-200">${escapeHtml(user.email)}</div>
+                                <div class="text-[10px] text-slate-500 truncate max-w-[180px]">${escapeHtml(user.id)}</div>
+                            </td>
+                            <td class="py-3 px-4">
+                                ${roleSelect}
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="font-bold text-sky-400">${user.usedToday}</span> / <span class="text-slate-400">${user.limit}회</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-0.5 rounded-md ${user.remaining > 0 ? 'bg-sky-500/10 text-sky-300' : 'bg-rose-500/10 text-rose-400'} font-bold">
+                                    ${user.remaining}회 남음
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-slate-400 text-[11px]">${escapeHtml(user.lastSeen)}</td>
+                            <td class="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">
+                                <button onclick="resetUsage('${user.id}')" class="px-2 py-1 rounded-lg bg-dark-800 hover:bg-dark-700 text-sky-400 border border-dark-750 font-medium transition" title="오늘 사용량을 0으로 초기화">
+                                    사용량 리셋
+                                </button>
+                                <button onclick="changeLimit('${user.id}', ${user.limit})" class="px-2 py-1 rounded-lg bg-dark-800 hover:bg-dark-700 text-amber-400 border border-dark-750 font-medium transition" title="일일 한도 직접 변경">
+                                    한도 직접입력
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-rose-400">오류: ${err.message}</td></tr>`;
+            }
+        }
+
+        // 활동 감사 로그 렌더링
+        async function loadLogs() {
+            const tbody = document.getElementById('logs-table-body');
+            try {
+                const url = currentLogCategory === 'all' 
+                    ? '/api/admin/logs' 
+                    : `/api/admin/logs?category=${encodeURIComponent(currentLogCategory)}`;
+
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                if (!res.ok) return;
+                const { logs } = await res.json();
+                if (!logs || logs.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">해당 분류의 활동 기록이 없습니다.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = logs.map(l => {
+                    let actionBadge = '';
+                    switch (l.action) {
+                        case 'CHAT_QUERY':
+                            actionBadge = '<span class="px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 font-semibold text-[10px]">AI 질문</span>';
+                            break;
+                        case 'LOGIN':
+                            actionBadge = '<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold text-[10px]">로그인</span>';
+                            break;
+                        case 'LOGOUT':
+                            actionBadge = '<span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-dark-750 font-semibold text-[10px]">로그아웃</span>';
+                            break;
+                        case 'SIGNUP':
+                            actionBadge = '<span class="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-semibold text-[10px]">회원가입</span>';
+                            break;
+                        case 'ROLE_CHANGE':
+                            actionBadge = '<span class="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 font-semibold text-[10px]">권한변경</span>';
+                            break;
+                        case 'LIMIT_CHANGE':
+                            actionBadge = '<span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold text-[10px]">한도조정</span>';
+                            break;
+                        case 'RESET_USAGE':
+                            actionBadge = '<span class="px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-semibold text-[10px]">사용량리셋</span>';
+                            break;
+                        case 'BLOCKED_REQUEST':
+                        case 'USER_BLOCK_TOGGLE':
+                            actionBadge = '<span class="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold text-[10px]">보안/차단</span>';
+                            break;
+                        default:
+                            actionBadge = `<span class="px-2 py-0.5 rounded-full bg-dark-850 text-slate-400 text-[10px]">${escapeHtml(l.action)}</span>`;
+                    }
+
+                    return `
+                        <tr class="hover:bg-dark-850/50 transition">
+                            <td class="py-2.5 px-4 text-slate-400 font-mono text-[11px] whitespace-nowrap">${escapeHtml(l.timestamp)}</td>
+                            <td class="py-2.5 px-4">${actionBadge}</td>
+                            <td class="py-2.5 px-4 font-mono text-slate-300">${escapeHtml(l.email)}</td>
+                            <td class="py-2.5 px-4 font-medium text-slate-200">${escapeHtml(l.details)}</td>
+                            <td class="py-2.5 px-4 font-mono text-[11px] text-slate-500">${escapeHtml(l.ip || '-')}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        // 권한 변경 함수
+        async function changeRole(userId, newRole) {
+            await executeUserAction(userId, 'set_role', { role: newRole });
+        }
+
+        // 사용량 리셋 함수
+        async function resetUsage(userId) {
+            if (!confirm('이 사용자의 오늘 질문 횟수를 0으로 리셋하시겠습니까?')) return;
+            await executeUserAction(userId, 'reset_usage');
+        }
+
+        // 일일 한도 직접 변경 함수
+        async function changeLimit(userId, currentLimit) {
+            const input = prompt(`새로운 일일 한도(회)를 입력하세요 (현재: ${currentLimit}회):`, currentLimit);
+            if (!input) return;
+            const newLimit = parseInt(input, 10);
+            if (isNaN(newLimit) || newLimit <= 0) {
+                alert('올바른 숫자를 입력해주세요.');
+                return;
+            }
+            await executeUserAction(userId, 'set_limit', { limit: newLimit });
+        }
+
+        async function executeUserAction(userId, action, extra = {}) {
+            try {
+                const res = await fetch('/api/admin/update-user', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ userId, action, ...extra })
+                });
+                if (res.ok) {
+                    loadDashboardData();
+                } else {
+                    const data = await res.json();
+                    alert(data.error || '작업 실패');
+                }
+            } catch (e) {
+                alert('통신 오류: ' + e.message);
+            }
+        }
+
+        // 로그 탭 클릭 이벤트 바인딩
+        document.querySelectorAll('.log-tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.log-tab-btn').forEach(b => {
+                    b.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition log-tab-btn';
+                });
+                e.target.className = 'px-2.5 py-1 rounded-lg bg-sky-500 text-white font-semibold transition log-tab-btn';
+                currentLogCategory = e.target.getAttribute('data-cat');
+                loadLogs();
+            });
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => loadDashboardData());
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

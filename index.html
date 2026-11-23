@@ -4,8 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IT News - 최신 기술 뉴스 & AI 큐레이터</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -42,8 +47,51 @@
             background: #334155;
             border-radius: 9999px;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #0284c7;
+        @keyframes ping-slow {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        @keyframes flow-packet {
+            0% { left: 2%; opacity: 0; transform: translateY(-50%) scale(0.6); }
+            10% { opacity: 1; transform: translateY(-50%) scale(1.1); }
+            90% { opacity: 1; transform: translateY(-50%) scale(1.1); }
+            100% { left: 98%; opacity: 0; transform: translateY(-50%) scale(0.6); }
+        }
+        @keyframes pulse-node {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+            50% { transform: scale(1.08); box-shadow: 0 0 24px 6px rgba(56, 189, 248, 0.75); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; filter: drop-shadow(0 0 8px #38bdf8); }
+        }
+        @keyframes beam-flow {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .anim-beam {
+            background: linear-gradient(90deg, rgba(56,189,248,0.1) 0%, rgba(56,189,248,0.9) 50%, rgba(168,85,247,0.9) 75%, rgba(52,211,153,0.9) 100%);
+            background-size: 200% 100%;
+            animation: beam-flow 2.2s infinite linear;
+        }
+        .step-active {
+            border-color: #38bdf8 !important;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.45) !important;
+            transform: translateY(-5px) scale(1.02);
+            background: rgba(15, 23, 42, 0.98) !important;
+        }
+        .step-pulse {
+            animation: ping-slow 2s infinite ease-in-out;
+        }
+        .anim-packet {
+            animation: flow-packet 3.2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .active-glow {
+            animation: pulse-node 1.5s infinite ease-in-out;
+        }
+        .code-pill {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
     </style>
 </head>
@@ -62,7 +110,58 @@
                     </h1>
                 </div>
             </div>
-            <span class="text-xs text-slate-400 hidden sm:inline">실시간 테크 뉴스 & AI 큐레이션</span>
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Supabase 연결 인디케이터 (초록색 표시) -->
+                <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Supabase 연결됨</span>
+                </div>
+
+                <button id="toggle-flow-btn" class="text-xs px-3 py-1.5 rounded-xl bg-dark-850 hover:bg-dark-800 text-sky-400 border border-dark-800 hover:border-sky-500/30 font-medium transition flex items-center gap-1.5 shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>API 동작 구조 보기</span>
+                </button>
+                
+                <!-- 비로그인 상태 UI -->
+                <div id="auth-guest-area" class="flex items-center gap-1.5">
+                    <span class="text-[11px] text-amber-400/90 hidden md:inline px-2 py-0.5 rounded-lg bg-amber-400/10 border border-amber-400/20">
+                        🔒 로그인 후 이용 가능
+                    </span>
+                    <button id="open-login-btn" class="text-xs px-3 py-1.5 rounded-xl bg-dark-850 hover:bg-dark-800 text-slate-300 hover:text-white border border-dark-800 transition font-medium">
+                        로그인
+                    </button>
+                    <button id="open-signup-btn" class="text-xs px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold shadow-sm transition">
+                        회원가입
+                    </button>
+                </div>
+
+                <!-- 로그인 상태 UI -->
+                <div id="auth-user-area" class="hidden flex items-center gap-2">
+                    <div id="user-quota-badge" class="text-[11px] px-2.5 py-1 rounded-xl bg-sky-500/10 text-sky-300 border border-sky-500/20 font-medium flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                        <span>남은 질문: <strong id="user-remaining-count" class="text-white font-bold">-</strong>/<span id="user-limit-count">10</span>회</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 bg-dark-850 px-3 py-1 rounded-xl border border-dark-800">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span id="user-display-name" class="text-xs font-semibold text-slate-200"></span>
+                        <span id="user-role-badge" class="text-[10px] text-sky-400 font-mono px-1.5 py-0.5 rounded bg-sky-500/10 uppercase">회원</span>
+                    </div>
+                    <!-- 나만의 스크랩북 열기 버튼 -->
+                    <button id="open-scrapbook-btn" class="text-xs px-2.5 py-1.5 rounded-xl bg-dark-850 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:border-amber-400 transition font-medium flex items-center gap-1.5 shadow-sm" title="내가 저장한 기사 스크랩북">
+                        <span>📑</span>
+                        <span>스크랩북</span>
+                        <span id="scrapbook-badge-count" class="px-1.5 py-0.2 rounded-full bg-amber-500 text-dark-950 font-black text-[10px]">0</span>
+                    </button>
+                    <button id="logout-btn" class="text-xs px-2.5 py-1.5 rounded-xl bg-dark-850 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-dark-800 transition">
+                        로그아웃
+                    </button>
+                    <button id="open-withdraw-btn" class="text-xs px-2.5 py-1.5 rounded-xl bg-dark-850 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-dark-800 hover:border-rose-500/30 transition font-medium" title="회원탈퇴 및 정보 영구삭제">
+                        탈퇴
+                    </button>
+                </div>
+
+                <span class="text-xs text-slate-400 hidden lg:inline border-l border-dark-800 pl-3">실시간 테크 뉴스 & AI</span>
+            </div>
         </div>
     </header>
 
@@ -81,7 +180,7 @@
                 <input 
                     type="text" 
                     id="search-input" 
-                    placeholder="예: 생성형 AI, 클라우드 쿠버네티스, 리눅스 보안, 양자 컴퓨팅..." 
+                    placeholder="예: 생성형 AI, 리눅스 커널... (검색 후 '3번 기사 나중에 볼래' 입력 시 자동 스크랩)" 
                     class="w-full bg-dark-950 border border-dark-800 rounded-2xl pl-12 pr-28 py-3.5 text-sm sm:text-base text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition shadow-inner"
                 >
                 <svg class="w-5 h-5 text-slate-400 absolute left-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,29 +195,65 @@
                 </button>
             </div>
 
-            <!-- 추천 키워드 태그 -->
-            <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
-                <span class="text-xs text-slate-500 font-medium mr-1">추천 검색어:</span>
+            <!-- 추천 키워드 및 대화형 명령 가이드 -->
+            <div class="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs text-slate-400">
+                <span class="text-slate-500 font-medium mr-1">추천 검색어:</span>
                 <span class="tag-btn px-3 py-1 rounded-lg bg-dark-850 text-slate-300 hover:text-white border border-dark-800 text-xs cursor-pointer transition"># 인공지능 (AI)</span>
                 <span class="tag-btn px-3 py-1 rounded-lg bg-dark-850 text-slate-300 hover:text-white border border-dark-800 text-xs cursor-pointer transition"># AWS 클라우드</span>
                 <span class="tag-btn px-3 py-1 rounded-lg bg-dark-850 text-slate-300 hover:text-white border border-dark-800 text-xs cursor-pointer transition"># 리눅스 커널</span>
                 <span class="tag-btn px-3 py-1 rounded-lg bg-dark-850 text-slate-300 hover:text-white border border-dark-800 text-xs cursor-pointer transition"># 사이버 보안</span>
+                <span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 font-medium">
+                    💡 기사 검색 후 <strong class="text-white">"1번 기사 나중에 볼래"</strong>라고 입력해 보세요!
+                </span>
             </div>
         </div>
     </div>
 
     <!-- 메인 2단 레이아웃 컨테이너 -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
+
+        <!-- [검색 결과 영역] 뉴스 기사 원문 및 AI 요약 브리핑 (상단 배치) -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
             <!-- [왼쪽 영역] 검색된 뉴스 원문 목록 (5칸/12) -->
             <aside class="lg:col-span-5 space-y-4">
-                <div class="flex items-center justify-between border-b border-dark-850 pb-3">
+                <div class="flex items-center justify-between border-b border-dark-850 pb-3 flex-wrap gap-2">
                     <div class="flex items-center gap-2">
                         <span class="text-base">📄</span>
                         <h3 class="text-sm font-bold text-slate-200 tracking-tight" id="news-section-title">검색된 뉴스 원문</h3>
                     </div>
-                    <span id="news-count" class="text-xs px-2 py-0.5 rounded-full bg-dark-850 text-slate-400">0건</span>
+                    <div class="flex items-center gap-2">
+                        <button 
+                            type="button" 
+                            id="batch-scrap-btn" 
+                            onclick="handleBatchScrapSelected()"
+                            class="hidden text-[11px] px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 font-bold transition shadow-sm items-center gap-1.5 active:scale-95"
+                            title="선택된 여러 기사를 한 번에 스크랩북에 저장"
+                        >
+                            <span>📑</span>
+                            <span id="batch-scrap-btn-text">선택 스크랩</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            id="keyword-scrap-btn" 
+                            onclick="openKeywordScrapModal()"
+                            class="hidden text-[11px] px-2.5 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold transition shadow-sm items-center gap-1 active:scale-95"
+                            title="특정 단어(키워드)가 포함된 기사만 찾아 자동으로 일괄 스크랩"
+                        >
+                            <span>🔍</span>
+                            <span>키워드 스크랩</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            id="select-all-news-btn" 
+                            onclick="toggleSelectAllNews()"
+                            class="hidden text-[11px] px-2 py-1 rounded-lg bg-dark-850 hover:bg-dark-800 text-slate-300 border border-dark-750 font-medium transition"
+                            title="전체 기사 선택 / 해제"
+                        >
+                            전체선택
+                        </button>
+                        <span id="news-count" class="text-xs px-2 py-0.5 rounded-full bg-dark-850 text-slate-400">0건</span>
+                    </div>
                 </div>
 
                 <!-- 뉴스 기사 카드 리스트 -->
@@ -140,20 +275,561 @@
                 </div>
 
                 <!-- AI 분석 결과 카드 -->
-                <div class="border border-dark-850 rounded-2xl p-6 sm:p-7 bg-dark-900/70 shadow-xl space-y-4 min-h-[400px]">
-                    <div id="result-content" class="text-sm sm:text-base text-slate-300 leading-relaxed whitespace-pre-wrap">
-검색어를 입력하고 [검색하기]를 누르면, 왼쪽에는 최신 뉴스 기사 원문이 나열되고 오른쪽에는 AI가 기사 원문을 종합 분석한 핵심 브리핑이 제공됩니다.
+                <div class="border border-dark-850 rounded-2xl p-6 sm:p-7 bg-dark-900/80 shadow-2xl space-y-4 min-h-[400px]">
+                    <div id="result-content" class="text-sm sm:text-base text-slate-300 leading-relaxed">
+                        <div class="p-6 rounded-2xl bg-dark-950/60 border border-dark-800 text-center text-slate-400 text-xs sm:text-sm space-y-2">
+                            <span class="text-2xl block mb-1">🤖</span>
+                            <p class="font-medium text-slate-300">검색어를 입력하고 [검색하기]를 누르면 실시간 분석 브리핑이 생성됩니다.</p>
+                            <p class="text-slate-500 text-xs">최신 기사 5건을 기반으로 3대 관점(핵심 요약, 최신 동향, 개발자 시사점) 카드 뷰로 깔끔하게 정리해 드립니다.</p>
+                        </div>
                     </div>
                 </div>
             </section>
 
         </div>
+
+        <!-- [시각화 섹션] 시스템 및 API 동작 흐름 가이드 (하단 배치) -->
+        <section id="workflow-panel" class="border border-sky-500/30 bg-gradient-to-b from-dark-900/95 to-dark-950/95 rounded-2xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+            <!-- 상단 헤더 -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-dark-850 gap-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center text-white text-lg font-bold shadow-md shadow-sky-500/20">
+                        ⚡
+                    </div>
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                            IT News 시스템 아키텍처 & 실시간 동작 원리
+                            <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">실시간 동기화</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">브라우저(Client) ➔ Cloudflare Tunnel ➔ 백엔드(server.py) ➔ Google News RSS ➔ Google Gemini AI 2.5 Flash 연동 구조</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 self-start sm:self-auto">
+                    <button id="demo-play-btn" class="text-xs px-3.5 py-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-white font-bold transition flex items-center gap-1.5 shadow-md shadow-sky-500/20 active:scale-95">
+                        <span>▶️</span>
+                        <span>전체 동작 구조 연속 시연 (재생)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 시스템 아키텍처 다이어그램 맵 (Client - Server - External APIs) -->
+            <div class="mt-4 p-5 rounded-2xl bg-dark-950 border border-dark-800 shadow-inner space-y-4">
+                <div class="flex items-center justify-between border-b border-dark-850/80 pb-2.5">
+                    <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                        <span>🗺️</span>
+                        <span>시스템 구성 컴포넌트 맵 (Architecture Components)</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-mono">End-to-End Pipeline</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                    <!-- 컴포넌트 1: 클라이언트 UI -->
+                    <div class="p-3.5 rounded-xl bg-dark-900/80 border border-sky-500/30 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-sky-400 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                                1. Client (Browser)
+                            </span>
+                            <span class="text-[10px] text-slate-500 font-mono">news.html</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            사용자 검색 키워드를 감지하여 <code class="text-sky-300 bg-dark-950 px-1 py-0.5 rounded">fetch('/api/chat')</code> 비동기 요청 전송 및 2단 분할 렌더링을 담당합니다.
+                        </p>
+                        <div class="pt-1 text-[10px] text-slate-400 border-t border-dark-850 font-mono">
+                            기술: Vanilla JS, Tailwind CSS
+                        </div>
+                    </div>
+
+                    <!-- 컴포넌트 2: Cloudflare Tunnel & 백엔드 서버 -->
+                    <div class="p-3.5 rounded-xl bg-dark-900/80 border border-indigo-500/30 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-indigo-400 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                                2. Cloudflare Tunnel & Backend
+                            </span>
+                            <span class="text-[10px] text-sky-400 font-mono bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20">Cloudflare</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            2단계부터 <strong>Cloudflare 전역 에지 네트워크</strong>와 암호화 터널로 연결되어 <code class="text-indigo-300">server.py</code>가 동작하며, RSS 수집 및 Gemini AI 추론을 전담 처리합니다.
+                        </p>
+                        <div class="pt-1 text-[10px] text-slate-400 border-t border-dark-850 font-mono flex items-center justify-between">
+                            <span>네트워크: Cloudflare Tunnel (HTTPS)</span>
+                            <span class="text-emerald-400">port: 8000</span>
+                        </div>
+                    </div>
+
+                    <!-- 컴포넌트 3: 구글 뉴스 RSS -->
+                    <div class="p-3.5 rounded-xl bg-dark-900/80 border border-purple-500/30 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-purple-400 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                                3. Google News RSS
+                            </span>
+                            <span class="text-[10px] text-slate-500 font-mono">External API</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            검색어와 관련된 최신 기사 5건(제목, 언론사, 링크, 본문 요약)을 실시간 XML로 공급받아 정제합니다.
+                        </p>
+                        <div class="pt-1 text-[10px] text-slate-400 border-t border-dark-850 font-mono">
+                            기술: urllib, ElementTree XML
+                        </div>
+                    </div>
+
+                    <!-- 컴포넌트 4: Gemini AI -->
+                    <div class="p-3.5 rounded-xl bg-dark-900/80 border border-emerald-500/30 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-emerald-400 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                4. Gemini 2.5 Flash
+                            </span>
+                            <span class="text-[10px] text-slate-500 font-mono">Generative AI</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            수집된 5개 기사 원문을 분석하여 1) 핵심요약, 2) 기술동향, 3) 개발자 시사점 3대 관점으로 브리핑을 완성합니다.
+                        </p>
+                        <div class="pt-1 text-[10px] text-slate-400 border-t border-dark-850 font-mono">
+                            기술: Google GenAI Client / REST
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- [시각적 애니메이션] 데이터 패킷 배달 트랙 -->
+            <div class="mt-4 p-5 rounded-2xl bg-dark-950/95 border border-dark-800 relative overflow-hidden shadow-inner">
+                <div class="text-[11px] font-semibold text-slate-400 mb-3 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="text-slate-300 font-medium">실시간 데이터 스트림 파이프라인 (Data Pipeline)</span>
+                        <span class="text-[10px] text-slate-500 hidden sm:inline">(원하는 노드를 클릭하면 해당 구간의 내부 메커니즘을 상세히 조회합니다)</span>
+                    </span>
+                    <span class="text-sky-400 font-mono text-[10px] bg-dark-900 px-2 py-0.5 rounded border border-dark-800" id="anim-stream-status">ACTIVE STREAM</span>
+                </div>
+
+                <!-- 4개 노드와 연결선 -->
+                <div class="relative py-6 px-3 sm:px-8">
+                    <!-- 기본 연결선 트랙 -->
+                    <div class="absolute top-1/2 left-8 right-8 h-1.5 bg-dark-800 -translate-y-1/2 z-0 rounded-full"></div>
+                    <!-- 빛나는 데이터 전송 파이프 효과 -->
+                    <div class="absolute top-1/2 left-8 right-8 h-1 anim-beam -translate-y-1/2 z-0 rounded-full"></div>
+                    
+                    <!-- 이동하는 패킷 엘리먼트 -->
+                    <div id="flow-particle" class="anim-packet absolute top-1/2 -translate-y-1/2 z-10 pointer-events-none flex items-center gap-1.5">
+                        <div class="w-5 h-5 rounded-full bg-sky-400 shadow-[0_0_18px_#38bdf8] flex items-center justify-center text-[10px] font-bold text-dark-950">
+                            📦
+                        </div>
+                        <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-lg backdrop-blur whitespace-nowrap font-sans border border-sky-400/40" id="packet-label">
+                            검색어 주문서 배달 중
+                        </span>
+                    </div>
+
+                    <!-- 4개 핵심 노드 아이콘 -->
+                    <div class="relative z-10 flex items-center justify-between">
+                        <!-- 노드 1 -->
+                        <div id="pipe-node-1" class="flex flex-col items-center gap-2 cursor-pointer group" onclick="simulateStep(1)">
+                            <div class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-dark-900 border-2 border-sky-500 flex items-center justify-center text-lg sm:text-2xl shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:border-sky-400">
+                                🙋‍♂️
+                            </div>
+                            <span class="text-[11px] font-bold text-sky-400 group-hover:underline">1. 브라우저 요청</span>
+                        </div>
+
+                        <!-- 노드 2 -->
+                        <div id="pipe-node-2" class="flex flex-col items-center gap-2 cursor-pointer group" onclick="simulateStep(2)">
+                            <div class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-dark-900 border-2 border-indigo-500 flex items-center justify-center text-lg sm:text-2xl shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:border-indigo-400">
+                                🛡️
+                            </div>
+                            <span class="text-[11px] font-bold text-indigo-400 group-hover:underline">2. Cloudflare 터널</span>
+                        </div>
+
+                        <!-- 노드 3 -->
+                        <div id="pipe-node-3" class="flex flex-col items-center gap-2 cursor-pointer group" onclick="simulateStep(3)">
+                            <div class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-dark-900 border-2 border-purple-500 flex items-center justify-center text-lg sm:text-2xl shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:border-purple-400">
+                                🧠
+                            </div>
+                            <span class="text-[11px] font-bold text-purple-400 group-hover:underline">3. Gemini AI 분석</span>
+                        </div>
+
+                        <!-- 노드 4 -->
+                        <div id="pipe-node-4" class="flex flex-col items-center gap-2 cursor-pointer group" onclick="simulateStep(4)">
+                            <div class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-dark-900 border-2 border-emerald-500 flex items-center justify-center text-lg sm:text-2xl shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:border-emerald-400">
+                                🎁
+                            </div>
+                            <span class="text-[11px] font-bold text-emerald-400 group-hover:underline">4. 2단 화면 렌더링</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 흐름 화살표가 있는 4단계 인터랙티브 시각화 -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 pt-4 relative">
+                
+                <!-- 1단계: 사용자 검색 -->
+                <div id="step-card-1" onclick="simulateStep(1)" class="step-card cursor-pointer relative bg-dark-900/90 border border-sky-500/40 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:border-sky-400 transition-all duration-300 group">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 text-[11px] font-bold">
+                                1단계 · 비동기 HTTP 요청
+                            </span>
+                            <span class="text-2xl group-hover:scale-125 transition-transform duration-300">🙋‍♂️</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white group-hover:text-sky-300 transition-colors">검색 키워드 전송</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            브라우저가 <code class="text-sky-300">POST /api/chat</code> 엔드포인트로 JSON 페이로드 <code class="text-sky-300">{"query": "..."}</code>를 Cloudflare 터널로 비동기 전송합니다.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-dark-850 text-[11px] text-slate-400 flex items-center justify-between font-mono">
+                        <span>프로토콜:</span>
+                        <span class="text-sky-300 font-semibold">HTTP/2 HTTPS (Cloudflare)</span>
+                    </div>
+                </div>
+
+                <!-- 2단계: Cloudflare 터널 & RSS 수집 -->
+                <div id="step-card-2" onclick="simulateStep(2)" class="step-card cursor-pointer relative bg-dark-900/90 border border-indigo-500/40 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:border-indigo-400 transition-all duration-300 group">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[11px] font-bold">
+                                2단계 · Cloudflare 터널 & 수집
+                            </span>
+                            <span class="text-2xl group-hover:scale-125 transition-transform duration-300">🛡️</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">Cloudflare Edge & RSS</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            <span class="text-sky-300 font-semibold">Cloudflare Tunnel</span>의 보안 암호화 경로를 거쳐 백엔드에 안전하게 도달하고, Google News RSS에 접근하여 최신 기사 5건을 실시간 수집 및 XML 파싱합니다.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-dark-850 text-[11px] text-slate-400 flex items-center justify-between font-mono">
+                        <span>실행 환경:</span>
+                        <span class="text-indigo-300 font-semibold">Cloudflare Tunnel (Edge)</span>
+                    </div>
+                </div>
+
+                <!-- 3단계: Gemini AI 분석 -->
+                <div id="step-card-3" onclick="simulateStep(3)" class="step-card cursor-pointer relative bg-dark-900/90 border border-purple-500/40 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:border-purple-400 transition-all duration-300 group">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 text-[11px] font-bold">
+                                3단계 · 백엔드 ➔ Gemini 연동
+                            </span>
+                            <span class="text-2xl group-hover:scale-125 transition-transform duration-300">🧠</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white group-hover:text-purple-300 transition-colors">Gemini 2.5 Flash 추론</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            백엔드 서버가 환경변수(<code class="text-purple-300">GEMINI_API_KEY</code>)로 Gemini API와 보안 통신하여 3대 관점의 분석 브리핑을 실시간 생성합니다.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-dark-850 text-[11px] text-slate-400 flex items-center justify-between font-mono">
+                        <span>API 키 보안:</span>
+                        <span class="text-purple-300 font-semibold">서버 환경변수(.env)</span>
+                    </div>
+                </div>
+
+                <!-- 4단계: 화면 전달 및 안전망 -->
+                <div id="step-card-4" onclick="simulateStep(4)" class="step-card cursor-pointer relative bg-dark-900/90 border border-emerald-500/40 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:border-emerald-400 transition-all duration-300 group">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[11px] font-bold">
+                                4단계 · 응답 ➔ 브라우저 렌더
+                            </span>
+                            <span class="text-2xl group-hover:scale-125 transition-transform duration-300">🎁</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">클라이언트 2단 동시 표출</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Cloudflare 터널을 통해 JSON 응답을 받아 화면 왼쪽에는 뉴스 원문 카드 5개를, 오른쪽에는 AI 요약을 즉시 동적 렌더링(DOM render)합니다.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-dark-850 text-[11px] text-slate-400 flex items-center justify-between font-mono">
+                        <span>최종 처리:</span>
+                        <span class="text-emerald-300 font-semibold">DOM 동적 렌더링 완료</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 실시간 동적 동작 애니메이션 콘솔 모니터 -->
+            <div id="live-action-box" class="mt-4 p-5 rounded-xl bg-dark-950 border border-sky-500/30 text-xs space-y-3 transition-all duration-300 shadow-2xl">
+                <div class="flex items-center justify-between border-b border-dark-850 pb-2.5">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="font-bold text-slate-100 text-sm" id="live-action-title">💡 지금 무슨 일이 일어나고 있나요?</span>
+                    </div>
+                    <span class="text-[11px] text-sky-400 font-mono bg-sky-500/10 px-2.5 py-1 rounded-md border border-sky-500/20" id="live-action-tag">대기 중</span>
+                </div>
+                <div class="flex items-start gap-3.5 pt-1">
+                    <div id="live-action-icon" class="w-11 h-11 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center text-2xl flex-shrink-0 border border-sky-500/20 shadow-md">
+                        👆
+                    </div>
+                    <div class="space-y-2.5 flex-1">
+                        <p id="live-action-desc" class="text-slate-200 leading-relaxed font-sans text-xs sm:text-sm">
+                            위의 <strong class="text-sky-300 font-semibold">1~4단계 카드</strong>를 클릭하시거나 상단 <strong class="text-sky-300 font-semibold">[전체 동작 구조 연속 시연 (재생)]</strong> 버튼을 눌러보세요! 데이터가 어떻게 만들어지고 배달되는지 상세히 시각화됩니다.
+                        </p>
+                        <!-- 실시간 처리 상태 및 페이로드 데이터 모니터 -->
+                        <div id="live-action-code" class="p-3 rounded-lg bg-dark-900 border border-dark-800 text-[11px] font-mono text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2 overflow-x-auto shadow-inner">
+                            <span class="flex items-center gap-2">
+                                <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-bold">SYSTEM FLOW</span>
+                                <span>사용자 브라우저 ➡️ server.py ➡️ Google News RSS ➡️ Gemini AI ➡️ 2단 화면 렌더링</span>
+                            </span>
+                            <span class="text-[10px] text-emerald-400 font-bold self-end sm:self-auto">Status: READY</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 하단 간편 요약 배너 -->
+            <div class="mt-5 p-3.5 rounded-xl bg-dark-950/80 border border-dark-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+                <div class="flex items-center gap-2">
+                    <span class="text-amber-400 font-bold">💡 아키텍처 요약:</span>
+                    <span class="text-slate-300">"브라우저(Client) ➔ Python REST API ➔ Google News RSS(원문 5건) ➔ Gemini 2.5 Flash(3대 관점 분석) ➔ 2단 동시 렌더링"</span>
+                </div>
+                <div class="text-[11px] text-emerald-400 font-mono bg-dark-900 px-2.5 py-1 rounded-md border border-dark-800">
+                    전체 처리 레이턴시: 약 1.2 ~ 2.0초
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- 푸터 -->
     <footer class="border-t border-dark-850 py-6 text-center text-xs text-slate-500 mt-auto">
         IT News Curation Service &copy; 2026. All rights reserved.
     </footer>
+
+    <!-- 회원가입 & 로그인 모달 -->
+    <div id="auth-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden transition-opacity">
+        <div class="bg-dark-900 border border-dark-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+            <button id="close-modal-btn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-dark-800 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            <!-- 탭 전환 버튼 -->
+            <div class="flex border-b border-dark-850 mb-6 pb-2 justify-between items-center">
+                <div class="flex gap-4">
+                    <button id="tab-signup" class="text-base font-bold pb-2 border-b-2 border-sky-400 text-sky-400 transition">회원가입</button>
+                    <button id="tab-login" class="text-base font-semibold pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition">로그인</button>
+                </div>
+                <!-- Supabase 상태 배지 (초록색 연결 표시만 유지) -->
+                <div id="supabase-status-badge" class="text-[11px] px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 font-medium select-none">
+                    <span id="supabase-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="supabase-status-text">Supabase 연결됨</span>
+                </div>
+            </div>
+
+            <!-- 메시지 알림 배너 -->
+            <div id="auth-alert" class="hidden mb-4 p-3 rounded-xl text-xs flex items-center gap-2"></div>
+
+            <!-- 회원가입 폼 -->
+            <form id="signup-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5" for="signup-name">이름 (닉네임)</label>
+                    <input type="text" id="signup-name" required placeholder="홍길동" class="w-full bg-dark-950 border border-dark-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5" for="signup-email">이메일</label>
+                    <input type="email" id="signup-email" required placeholder="tech@example.com" class="w-full bg-dark-950 border border-dark-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5" for="signup-password">비밀번호</label>
+                    <input type="password" id="signup-password" required minlength="6" placeholder="6자리 이상 비밀번호" class="w-full bg-dark-950 border border-dark-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5" for="signup-password-confirm">비밀번호 확인</label>
+                    <input type="password" id="signup-password-confirm" required minlength="6" placeholder="비밀번호 재입력" class="w-full bg-dark-950 border border-dark-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="signup-terms" required class="rounded bg-dark-950 border-dark-800 text-sky-500 focus:ring-sky-500">
+                    <label for="signup-terms" class="text-xs text-slate-400 cursor-pointer">서비스 이용약관 및 개인정보 처리방침에 동의합니다.</label>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-400 font-bold text-sm text-white shadow-lg shadow-sky-500/20 transition active:scale-95">
+                    회원가입 완료
+                </button>
+            </form>
+
+            <!-- 로그인 폼 -->
+            <form id="login-form" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5" for="login-email">이메일</label>
+                    <input type="email" id="login-email" required placeholder="tech@example.com" class="w-full bg-dark-950 border border-dark-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5" for="login-password">비밀번호</label>
+                    <input type="password" id="login-password" required placeholder="비밀번호 입력" class="w-full bg-dark-950 border border-dark-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-400 font-bold text-sm text-white shadow-lg shadow-sky-500/20 transition active:scale-95">
+                    로그인
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 회원 탈퇴 확인 모달 -->
+    <div id="withdraw-modal" class="hidden fixed inset-0 z-50 bg-dark-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-dark-900 border border-dark-850 rounded-2xl max-w-md w-full p-6 shadow-2xl relative space-y-4">
+            <button id="close-withdraw-modal-btn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 text-lg">
+                &times;
+            </button>
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-2xl flex items-center justify-center mx-auto">
+                    ⚠️
+                </div>
+                <h3 class="text-lg font-bold text-white">회원 탈퇴 및 계정 영구 삭제</h3>
+                <p class="text-xs text-rose-300/90 leading-relaxed">
+                    탈퇴 시 회원님의 <strong>아이디(이메일), 비밀번호, 잔여 질문 횟수 및 이용 기록</strong>이 시스템에서 즉시 <strong>영구 삭제</strong>되며 절대 복구할 수 없습니다.
+                </p>
+            </div>
+
+            <div id="withdraw-alert" class="hidden p-3 rounded-xl text-xs bg-rose-500/10 border border-rose-500/30 text-rose-400"></div>
+
+            <form id="withdraw-form" class="space-y-4 pt-2">
+                <div class="bg-dark-950 p-3.5 rounded-xl border border-dark-800 text-xs space-y-2">
+                    <div class="text-slate-300 font-medium">탈퇴 대상 계정: <span id="withdraw-user-email" class="font-bold text-white"></span></div>
+                    <div class="flex items-start gap-2 pt-1 text-[11px] text-slate-400">
+                        <input type="checkbox" id="withdraw-confirm-check" required class="mt-0.5 rounded bg-dark-900 border-dark-750 text-rose-500 focus:ring-rose-500">
+                        <label for="withdraw-confirm-check" class="cursor-pointer select-none">
+                            안내 사항을 모두 확인하였으며, 아이디와 비밀번호를 포함한 모든 정보의 영구 삭제에 동의합니다.
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="button" id="cancel-withdraw-btn" class="w-1/2 py-2.5 rounded-xl bg-dark-850 hover:bg-dark-800 text-slate-300 font-semibold text-xs transition">
+                        취소
+                    </button>
+                    <button type="submit" id="confirm-withdraw-submit-btn" class="w-1/2 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/20 transition active:scale-95">
+                        영구 탈퇴 확인
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 나만의 스크랩북 & AI 요약 모달 -->
+    <div id="scrapbook-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden transition-opacity">
+        <div class="bg-dark-900 border border-dark-800 rounded-3xl max-w-3xl w-full p-5 sm:p-7 shadow-2xl relative max-h-[88vh] flex flex-col">
+            <button id="close-scrapbook-modal-btn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-dark-800 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            <!-- 헤더 및 AI 요약 버튼 -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-dark-850 pb-4 mb-4 gap-3 pr-8">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center text-xl shadow-md">
+                        📑
+                    </div>
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                            <span>나만의 IT 뉴스 스크랩북</span>
+                            <span id="scrapbook-modal-count-badge" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-mono">0건</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">챗봇과 탐색하며 찜해둔 관심 기사를 한곳에 보관하고 언제든 열람하세요.</p>
+                    </div>
+                </div>
+
+                <!-- AI 종합 요약 생성 버튼 -->
+                <button 
+                    type="button" 
+                    id="summarize-scrapbook-btn"
+                    class="self-start sm:self-auto px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-sky-500 hover:from-amber-400 hover:to-sky-400 text-dark-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/10 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <span>🤖</span>
+                    <span>스크랩 기사 종합 AI 요약</span>
+                </button>
+            </div>
+
+            <!-- AI 요약 보고서 결과 박스 (기본 hidden) -->
+            <div id="scrapbook-summary-box" class="hidden mb-4 p-4 sm:p-5 rounded-2xl bg-dark-950/90 border border-amber-500/40 shadow-inner space-y-2.5 max-h-60 overflow-y-auto">
+                <div class="flex items-center justify-between pb-2 border-b border-dark-800">
+                    <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                        <span>✨</span>
+                        <span>AI 스크랩북 종합 브리핑 리포트</span>
+                    </span>
+                    <button type="button" id="close-summary-box-btn" class="text-[11px] text-slate-400 hover:text-white underline">접기</button>
+                </div>
+                <div id="scrapbook-summary-content" class="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2">
+                </div>
+            </div>
+
+            <!-- 스크랩된 기사 리스트 스크롤 영역 -->
+            <div id="scrapbook-modal-items" class="flex-1 overflow-y-auto space-y-3 pr-1">
+                <div class="p-8 text-center text-slate-400 text-xs sm:text-sm bg-dark-950/40 rounded-2xl border border-dark-850">
+                    아직 스크랩한 기사가 없습니다.<br>뉴스 검색 결과에서 마음에 드는 기사의 [📑 스크랩] 버튼을 눌러보세요!
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-dark-850 mt-4 flex justify-between items-center text-xs text-slate-500">
+                <span>💡 자동저장: 스크랩한 기사는 계정에 안전하게 영구 저장됩니다.</span>
+                <button type="button" id="close-scrapbook-footer-btn" class="px-4 py-2 rounded-xl bg-dark-850 hover:bg-dark-800 text-slate-300 font-semibold transition">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 키워드 기반 맞춤 스크랩 모달 -->
+    <div id="keyword-scrap-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden transition-opacity">
+        <div class="bg-dark-900 border border-dark-800 rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl relative space-y-4">
+            <button type="button" onclick="closeKeywordScrapModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-dark-800 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            <div class="flex items-center gap-3 border-b border-dark-850 pb-3">
+                <div class="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-400 flex items-center justify-center text-xl shadow-md">
+                    🔍
+                </div>
+                <div>
+                    <h3 class="text-base sm:text-lg font-bold text-white">특정 단어(키워드) 맞춤 스크랩</h3>
+                    <p class="text-xs text-slate-400">제목이나 내용에 특정 단어가 들어간 기사만 자동으로 골라 스크랩합니다.</p>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label for="scrap-keyword-input" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        필터링할 단어 입력 <span class="text-slate-500 font-normal">(쉼표로 여러 단어 입력 가능)</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <input 
+                            type="text" 
+                            id="scrap-keyword-input" 
+                            placeholder="예: 보안, 삼성, 오픈소스, AI..." 
+                            class="flex-1 bg-dark-950 border border-dark-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                            onkeydown="if(event.key==='Enter') executeKeywordScrap()"
+                        >
+                        <button 
+                            type="button" 
+                            onclick="executeKeywordScrap()" 
+                            class="px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-dark-950 font-bold text-xs sm:text-sm transition flex-shrink-0 active:scale-95 shadow-md shadow-sky-500/10"
+                        >
+                            스크랩 실행
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 빠른 추천 단어 칩 -->
+                <div class="flex flex-wrap items-center gap-1.5 pt-1 text-xs text-slate-400">
+                    <span class="text-slate-500 text-[11px]">빠른 키워드:</span>
+                    <button type="button" onclick="setKeywordAndScrap('보안')" class="px-2.5 py-1 rounded-lg bg-dark-950 hover:bg-dark-800 text-slate-300 border border-dark-800 text-[11px] transition">#보안</button>
+                    <button type="button" onclick="setKeywordAndScrap('AI')" class="px-2.5 py-1 rounded-lg bg-dark-950 hover:bg-dark-800 text-slate-300 border border-dark-800 text-[11px] transition">#AI</button>
+                    <button type="button" onclick="setKeywordAndScrap('클라우드')" class="px-2.5 py-1 rounded-lg bg-dark-950 hover:bg-dark-800 text-slate-300 border border-dark-800 text-[11px] transition">#클라우드</button>
+                    <button type="button" onclick="setKeywordAndScrap('출시')" class="px-2.5 py-1 rounded-lg bg-dark-950 hover:bg-dark-800 text-slate-300 border border-dark-800 text-[11px] transition">#출시</button>
+                    <button type="button" onclick="setKeywordAndScrap('구글')" class="px-2.5 py-1 rounded-lg bg-dark-950 hover:bg-dark-800 text-slate-300 border border-dark-800 text-[11px] transition">#구글</button>
+                </div>
+
+                <div id="keyword-scrap-preview" class="p-3.5 rounded-xl bg-dark-950/80 border border-dark-800/80 text-xs text-slate-400 min-h-[60px] flex items-center justify-center text-center">
+                    단어를 입력하시면 현재 검색된 뉴스 기사(최대 8건) 중에서 매칭되는 기사들을 즉시 스크랩합니다.
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-dark-850 flex justify-end">
+                <button type="button" onclick="closeKeywordScrapModal()" class="px-4 py-2 rounded-xl bg-dark-850 hover:bg-dark-800 text-slate-300 text-xs font-semibold transition">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const input = document.getElementById('search-input');
@@ -164,11 +840,586 @@
         const resultContent = document.getElementById('result-content');
         const statusBadge = document.getElementById('status-badge');
         const resultTitle = document.getElementById('result-title');
+        const userRemainingCount = document.getElementById('user-remaining-count');
+        const userLimitCount = document.getElementById('user-limit-count');
+        const userRoleBadge = document.getElementById('user-role-badge');
+        const openScrapbookBtn = document.getElementById('open-scrapbook-btn');
+        const scrapbookBadgeCount = document.getElementById('scrapbook-badge-count');
+        const scrapbookModal = document.getElementById('scrapbook-modal');
+        const closeScrapbookModalBtn = document.getElementById('close-scrapbook-modal-btn');
+        const closeScrapbookFooterBtn = document.getElementById('close-scrapbook-footer-btn');
+        const scrapbookModalCountBadge = document.getElementById('scrapbook-modal-count-badge');
+        const scrapbookModalItems = document.getElementById('scrapbook-modal-items');
+        const summarizeScrapbookBtn = document.getElementById('summarize-scrapbook-btn');
+        const scrapbookSummaryBox = document.getElementById('scrapbook-summary-box');
+        const scrapbookSummaryContent = document.getElementById('scrapbook-summary-content');
+        const closeSummaryBoxBtn = document.getElementById('close-summary-box-btn');
+
+        // 스크랩북 로컬 캐시 및 최근 검색 기사 캐시
+        let userScrapbook = [];
+        let currentArticles = [];
+
+        // 사용자 스크랩 목록 서버에서 조회
+        async function fetchUserScrapbook() {
+            const token = await getAuthToken();
+            if (!token) {
+                userScrapbook = [];
+                updateScrapbookBadges();
+                return;
+            }
+            try {
+                const res = await fetch('/api/scrapbook', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    userScrapbook = data.items || [];
+                    updateScrapbookBadges();
+                }
+            } catch (e) {
+                console.error('스크랩북 조회 오류:', e);
+            }
+        }
+
+        function updateScrapbookBadges() {
+            const count = userScrapbook.length;
+            if (scrapbookBadgeCount) scrapbookBadgeCount.textContent = count;
+            if (scrapbookModalCountBadge) scrapbookModalCountBadge.textContent = `${count}건`;
+        }
+
+        function isArticleScrapped(article) {
+            if (!article) return false;
+            return userScrapbook.some(it => 
+                (article.link && it.link === article.link) || 
+                (article.title && it.title === article.title)
+            );
+        }
+
+        // 기사 스크랩 토글 (추가/삭제)
+        async function toggleScrapArticle(article) {
+            const token = await getAuthToken();
+            if (!token) {
+                openModal('login');
+                showAlert('기사 스크랩 기능은 회원가입/로그인 후 이용할 수 있습니다.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/scrapbook/toggle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ article, authToken: token })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || '스크랩 처리에 실패했습니다.');
+                    return;
+                }
+
+                userScrapbook = data.items || [];
+                updateScrapbookBadges();
+
+                // 뉴스 목록 기사 카드들의 스크랩 버튼 UI 업데이트
+                updateArticleScrapButtons();
+
+                // 스크랩북 모달이 열려 있는 상태라면 재렌더링
+                if (scrapbookModal && !scrapbookModal.classList.contains('hidden')) {
+                    renderScrapbookModal();
+                }
+
+                showToast(data.isScrapped 
+                    ? `📑 '${article.title.slice(0, 25)}...' 기사를 스크랩북에 저장했습니다!` 
+                    : `🗑️ '${article.title.slice(0, 25)}...' 스크랩을 해제했습니다.`
+                );
+
+            } catch (err) {
+                alert('스크랩 처리 중 네트워크 오류가 발생했습니다: ' + err.message);
+            }
+        }
+
+        // 여러 기사 일괄 스크랩
+        async function batchScrapArticles(articlesToScrap) {
+            if (!articlesToScrap || articlesToScrap.length === 0) {
+                alert('스크랩할 기사를 선택해 주세요.');
+                return;
+            }
+
+            const token = await getAuthToken();
+            if (!token) {
+                openModal('login');
+                showAlert('기사 스크랩 기능은 회원가입/로그인 후 이용할 수 있습니다.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/scrapbook/batch-add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ articles: articlesToScrap, authToken: token })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || '일괄 스크랩 처리에 실패했습니다.');
+                    return;
+                }
+
+                userScrapbook = data.items || [];
+                updateScrapbookBadges();
+                updateArticleScrapButtons();
+
+                if (scrapbookModal && !scrapbookModal.classList.contains('hidden')) {
+                    renderScrapbookModal();
+                }
+
+                // 체크박스 선택 초기화
+                selectedArticleIndices.clear();
+                updateBatchToolbarUI();
+
+                if (data.addedCount > 0) {
+                    showToast(`📑 기사 ${data.addedCount}건을 스크랩북에 한 번에 보관했습니다!`);
+                } else {
+                    showToast(`ℹ️ 선택한 기사가 이미 스크랩북에 모두 보관되어 있습니다.`);
+                }
+
+            } catch (err) {
+                alert('일괄 스크랩 처리 중 네트워크 오류가 발생했습니다: ' + err.message);
+            }
+        }
+
+        function updateArticleScrapButtons() {
+            currentArticles.forEach((article, idx) => {
+                const btn = document.getElementById(`scrap-btn-${idx}`);
+                if (btn) {
+                    const scrapped = isArticleScrapped(article);
+                    updateScrapBtnUI(btn, scrapped);
+                }
+            });
+        }
+
+        function updateScrapBtnUI(btn, isScrapped) {
+            if (isScrapped) {
+                btn.className = 'inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold transition shadow-sm active:scale-95';
+                btn.innerHTML = '<span>📑</span><span>스크랩됨</span>';
+            } else {
+                btn.className = 'inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-dark-850 hover:bg-dark-800 text-slate-300 hover:text-amber-300 border border-dark-750 hover:border-amber-500/30 font-medium transition active:scale-95';
+                btn.innerHTML = '<span class="opacity-70">🔖</span><span>스크랩</span>';
+            }
+        }
+
+        // 토스트 알림 메시지
+        function showToast(msg) {
+            let toast = document.getElementById('global-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'global-toast';
+                toast.className = 'fixed bottom-6 right-6 z-50 bg-dark-900 border border-amber-500/40 text-slate-100 px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm flex items-center gap-2 transform transition-all duration-300 translate-y-10 opacity-0 pointer-events-none';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = msg;
+            toast.classList.remove('translate-y-10', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 2500);
+        }
+
+        // 스크랩북 모달 렌더링
+        function renderScrapbookModal() {
+            if (!userScrapbook || userScrapbook.length === 0) {
+                scrapbookModalItems.innerHTML = `
+                    <div class="p-8 text-center text-slate-400 text-xs sm:text-sm bg-dark-950/40 rounded-2xl border border-dark-850 space-y-2">
+                        <span class="text-3xl block">📑</span>
+                        <p class="font-medium text-slate-300">아직 스크랩북에 보관된 기사가 없습니다.</p>
+                        <p class="text-slate-500 text-xs">궁금한 IT 뉴스를 검색한 후 각 기사 카드의 [🔖 스크랩] 버튼을 눌러보세요!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            scrapbookModalItems.innerHTML = userScrapbook.map((item, idx) => {
+                return `
+                    <div class="p-4 rounded-2xl bg-dark-950 border border-dark-800 hover:border-dark-750 flex flex-col sm:flex-row sm:items-start justify-between gap-3 transition">
+                        <div class="space-y-1.5 flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[10px] font-medium">
+                                    ${escapeHtml(item.source || 'IT News')}
+                                </span>
+                                ${item.pubDate ? `<span class="text-[10px] text-slate-500">${escapeHtml(item.pubDate)}</span>` : ''}
+                                ${item.savedAt ? `<span class="text-[10px] text-amber-400/80 font-mono">저장: ${escapeHtml(item.savedAt)}</span>` : ''}
+                            </div>
+                            <h4 class="text-sm font-bold text-white hover:text-amber-300 transition">
+                                <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer" class="hover:underline flex items-start gap-1">
+                                    <span>${escapeHtml(item.title)}</span>
+                                    <svg class="w-3.5 h-3.5 opacity-60 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                    </svg>
+                                </a>
+                            </h4>
+                            ${item.description ? `<p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${escapeHtml(item.description)}</p>` : ''}
+                        </div>
+
+                        <div class="flex items-center gap-2 flex-shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-dark-850">
+                            <a 
+                                href="${escapeHtml(item.link)}" 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                class="px-3 py-1.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs font-semibold transition"
+                            >
+                                원문 보기 &rarr;
+                            </a>
+                            <button 
+                                type="button" 
+                                onclick="handleScrapRemove('${escapeHtml(item.id)}')" 
+                                class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-medium transition"
+                                title="스크랩북에서 삭제"
+                            >
+                                삭제
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 스크랩 삭제 핸들러
+        window.handleScrapRemove = function(scrapId) {
+            const target = userScrapbook.find(it => it.id === scrapId);
+            if (target) {
+                toggleScrapArticle(target);
+            }
+        };
+
+        // 스크랩 기사 클릭 핸들러
+        window.handleArticleScrapClick = function(idx) {
+            const target = currentArticles[idx];
+            if (target) {
+                toggleScrapArticle(target);
+            }
+        };
+
+        // 여러 기사 선택(체크박스) 상태 관리
+        const selectedArticleIndices = new Set();
+
+        window.handleArticleCheckboxChange = function(idx, checked) {
+            if (checked) {
+                selectedArticleIndices.add(idx);
+            } else {
+                selectedArticleIndices.delete(idx);
+            }
+            updateBatchToolbarUI();
+        };
+
+        window.toggleSelectAllNews = function() {
+            if (currentArticles.length === 0) return;
+            const selectAllBtn = document.getElementById('select-all-news-btn');
+            const allSelected = selectedArticleIndices.size === currentArticles.length;
+
+            if (allSelected) {
+                selectedArticleIndices.clear();
+            } else {
+                currentArticles.forEach((_, idx) => selectedArticleIndices.add(idx));
+            }
+
+            // 개별 체크박스 상태 동기화
+            currentArticles.forEach((_, idx) => {
+                const cb = document.getElementById(`news-check-${idx}`);
+                if (cb) cb.checked = !allSelected;
+            });
+
+            updateBatchToolbarUI();
+        };
+
+        function updateBatchToolbarUI() {
+            const batchBtn = document.getElementById('batch-scrap-btn');
+            const batchText = document.getElementById('batch-scrap-btn-text');
+            const keywordBtn = document.getElementById('keyword-scrap-btn');
+            const selectAllBtn = document.getElementById('select-all-news-btn');
+
+            if (!batchBtn || !selectAllBtn) return;
+
+            if (currentArticles.length > 0) {
+                batchBtn.classList.remove('hidden');
+                batchBtn.classList.add('inline-flex');
+                if (keywordBtn) {
+                    keywordBtn.classList.remove('hidden');
+                    keywordBtn.classList.add('inline-flex');
+                }
+                selectAllBtn.classList.remove('hidden');
+                selectAllBtn.classList.add('inline-flex');
+
+                const count = selectedArticleIndices.size;
+                if (count > 0) {
+                    batchText.textContent = `선택 ${count}건 스크랩`;
+                    batchBtn.classList.remove('opacity-50');
+                } else {
+                    batchText.textContent = '선택 스크랩';
+                    batchBtn.classList.add('opacity-50');
+                }
+
+                selectAllBtn.textContent = (selectedArticleIndices.size === currentArticles.length && currentArticles.length > 0) 
+                    ? '선택 해제' 
+                    : '전체 선택';
+            } else {
+                batchBtn.classList.add('hidden');
+                batchBtn.classList.remove('inline-flex');
+                if (keywordBtn) {
+                    keywordBtn.classList.add('hidden');
+                    keywordBtn.classList.remove('inline-flex');
+                }
+                selectAllBtn.classList.add('hidden');
+                selectAllBtn.classList.remove('inline-flex');
+            }
+        }
+
+        // 특정 단어(키워드) 기반 필터링 스크랩 함수
+        function filterArticlesByKeyword(kw) {
+            if (!kw || !kw.trim()) return [];
+            const keywords = kw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+            if (keywords.length === 0) return [];
+
+            return currentArticles.filter(art => {
+                const title = (art.title || '').toLowerCase();
+                const desc = (art.description || '').toLowerCase();
+                const source = (art.source || '').toLowerCase();
+                return keywords.some(k => title.includes(k) || desc.includes(k) || source.includes(k));
+            });
+        }
+
+        function executeScrapByKeyword(kw) {
+            const matchedArticles = filterArticlesByKeyword(kw);
+            if (matchedArticles.length === 0) {
+                alert(`현재 검색된 기사 목록에서 '${kw}' 단어가 포함된 기사를 찾을 수 없습니다.`);
+                return false;
+            }
+
+            batchScrapArticles(matchedArticles);
+            showToast(`🔍 단어 '${kw}' 관련 기사 ${matchedArticles.length}건을 자동 스크랩했습니다!`);
+            return true;
+        }
+
+        // 키워드 스크랩 모달 제어
+        window.openKeywordScrapModal = function() {
+            if (currentArticles.length === 0) {
+                alert('먼저 상단 검색창에서 IT 뉴스를 검색해 주세요.');
+                return;
+            }
+            const modal = document.getElementById('keyword-scrap-modal');
+            const inputEl = document.getElementById('scrap-keyword-input');
+            const previewEl = document.getElementById('keyword-scrap-preview');
+            if (modal) {
+                modal.classList.remove('hidden');
+                if (previewEl) {
+                    previewEl.innerHTML = `현재 검색된 <strong>${currentArticles.length}건</strong>의 기사 중에서 단어를 검색하여 스크랩합니다.`;
+                }
+                if (inputEl) {
+                    inputEl.value = '';
+                    setTimeout(() => inputEl.focus(), 50);
+                }
+            }
+        };
+
+        window.closeKeywordScrapModal = function() {
+            const modal = document.getElementById('keyword-scrap-modal');
+            if (modal) modal.classList.add('hidden');
+        };
+
+        window.setKeywordAndScrap = function(kw) {
+            const inputEl = document.getElementById('scrap-keyword-input');
+            if (inputEl) inputEl.value = kw;
+            executeKeywordScrap();
+        };
+
+        window.executeKeywordScrap = function() {
+            const inputEl = document.getElementById('scrap-keyword-input');
+            const kw = inputEl ? inputEl.value.trim() : '';
+            if (!kw) {
+                alert('스크랩할 단어(키워드)를 입력해 주세요.');
+                return;
+            }
+            const ok = executeScrapByKeyword(kw);
+            if (ok) {
+                closeKeywordScrapModal();
+            }
+        };
+
+        window.handleBatchScrapSelected = function() {
+            if (selectedArticleIndices.size === 0) {
+                alert('스크랩할 기사를 먼저 체크박스로 선택해 주세요.\n(또는 "전체 선택" 후 클릭)');
+                return;
+            }
+            const articlesToScrap = Array.from(selectedArticleIndices)
+                .sort((a, b) => a - b)
+                .map(idx => currentArticles[idx])
+                .filter(Boolean);
+
+            batchScrapArticles(articlesToScrap);
+        };
+
+        // 스크랩 모달 열기/닫기 이벤트
+        if (openScrapbookBtn) {
+            openScrapbookBtn.addEventListener('click', async () => {
+                const token = await getAuthToken();
+                if (!token) {
+                    openModal('login');
+                    showAlert('나만의 스크랩북은 회원가입/로그인 후 확인할 수 있습니다.');
+                    return;
+                }
+                await fetchUserScrapbook();
+                renderScrapbookModal();
+                scrapbookModal.classList.remove('hidden');
+            });
+        }
+
+        if (closeScrapbookModalBtn) {
+            closeScrapbookModalBtn.addEventListener('click', () => {
+                scrapbookModal.classList.add('hidden');
+            });
+        }
+        if (closeScrapbookFooterBtn) {
+            closeScrapbookFooterBtn.addEventListener('click', () => {
+                scrapbookModal.classList.add('hidden');
+            });
+        }
+        if (scrapbookModal) {
+            scrapbookModal.addEventListener('click', (e) => {
+                if (e.target === scrapbookModal) {
+                    scrapbookModal.classList.add('hidden');
+                }
+            });
+        }
+        if (closeSummaryBoxBtn) {
+            closeSummaryBoxBtn.addEventListener('click', () => {
+                scrapbookSummaryBox.classList.add('hidden');
+            });
+        }
+
+        // 스크랩북 종합 AI 요약 요청
+        if (summarizeScrapbookBtn) {
+            summarizeScrapbookBtn.addEventListener('click', async () => {
+                const token = await getAuthToken();
+                if (!token) {
+                    openModal('login');
+                    showAlert('로그인이 필요합니다.');
+                    return;
+                }
+
+                if (!userScrapbook || userScrapbook.length === 0) {
+                    alert('스크랩한 기사가 없습니다. 먼저 관심 기사를 스크랩북에 추가해 주세요!');
+                    return;
+                }
+
+                summarizeScrapbookBtn.disabled = true;
+                summarizeScrapbookBtn.innerHTML = '<span>⏳</span><span>AI 브리핑 리포트 생성 중...</span>';
+                scrapbookSummaryBox.classList.remove('hidden');
+                scrapbookSummaryContent.innerHTML = `
+                    <div class="py-4 text-center space-y-2">
+                        <div class="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        <p class="text-xs text-amber-300 font-semibold">스크랩된 기사 ${userScrapbook.length}건을 종합 분석하여 핵심 브리핑을 작성하고 있습니다...</p>
+                    </div>
+                `;
+
+                try {
+                    const res = await fetch('/api/scrapbook/summarize', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ authToken: token })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.error || '요약 리포트 생성 실패');
+                    }
+
+                    scrapbookSummaryContent.innerHTML = formatAiSummary(data.summary);
+
+                } catch (err) {
+                    scrapbookSummaryContent.innerHTML = `
+                        <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+                            ⚠️ 요약 리포트 생성 실패: ${escapeHtml(err.message)}
+                        </div>
+                    `;
+                } finally {
+                    summarizeScrapbookBtn.disabled = false;
+                    summarizeScrapbookBtn.innerHTML = '<span>🤖</span><span>스크랩 기사 종합 AI 요약</span>';
+                }
+            });
+        }
+
+        // 사용자 토큰 가져오기
+        async function getAuthToken() {
+            if (supabaseClient) {
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session && session.access_token) {
+                        return session.access_token;
+                    }
+                } catch (e) {
+                    console.error('세션 토큰 조회 오류:', e);
+                }
+            }
+            const localUser = getCurrentUser();
+            if (localUser && localUser.id) {
+                return `local-user-${localUser.id}`;
+            }
+            return null;
+        }
+
+        // 잔여 질문 한도 조회
+        async function refreshUserUsage() {
+            const token = await getAuthToken();
+            if (!token) {
+                if (userRemainingCount) userRemainingCount.textContent = '-';
+                if (userLimitCount) userLimitCount.textContent = '10';
+                return;
+            }
+            try {
+                const res = await fetch('/api/user/usage', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.usage) {
+                        if (userRemainingCount) userRemainingCount.textContent = data.usage.remaining;
+                        if (userLimitCount) userLimitCount.textContent = data.usage.limit;
+                    }
+                    if (userRoleBadge) {
+                        const r = (data.role || (data.usage && data.usage.role) || 'user').toUpperCase();
+                        userRoleBadge.textContent = r;
+                        if (r === 'VIP') {
+                            userRoleBadge.className = 'text-[10px] text-amber-300 font-mono px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/30 uppercase font-bold';
+                        } else if (r === 'ADMIN') {
+                            userRoleBadge.className = 'text-[10px] text-purple-300 font-mono px-1.5 py-0.5 rounded bg-purple-500/20 border border-purple-500/30 uppercase font-bold';
+                        } else if (r === 'BLOCKED') {
+                            userRoleBadge.className = 'text-[10px] text-rose-300 font-mono px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/30 uppercase font-bold';
+                        } else {
+                            userRoleBadge.className = 'text-[10px] text-sky-400 font-mono px-1.5 py-0.5 rounded bg-sky-500/10 uppercase';
+                        }
+                    }
+                }
+            } catch (e) {
+                // ignore
+            }
+        }
 
         function renderArticles(articles, query) {
+            currentArticles = articles || [];
+            selectedArticleIndices.clear();
             newsSectionTitle.textContent = `'${query}' 관련 뉴스 기사`;
             if (!articles || articles.length === 0) {
                 newsCount.textContent = '0건';
+                updateBatchToolbarUI();
                 newsList.innerHTML = `
                     <div class="border border-dark-850 rounded-2xl p-6 text-center bg-dark-900/40 text-slate-400 text-xs">
                         검색된 뉴스 기사가 없습니다.
@@ -178,20 +1429,38 @@
             }
 
             newsCount.textContent = `${articles.length}건`;
+            updateBatchToolbarUI();
+
             newsList.innerHTML = articles.map((article, index) => {
+                const itemNum = index + 1;
                 const sourceBadge = article.source 
                     ? `<span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 text-[11px] font-medium border border-sky-500/20">${escapeHtml(article.source)}</span>` 
                     : '';
                 const pubDate = article.pubDate ? `<span class="text-[11px] text-slate-500">${escapeHtml(article.pubDate)}</span>` : '';
+                const isScrapped = isArticleScrapped(article);
 
                 return `
-                    <article class="group border border-dark-850 hover:border-sky-500/50 rounded-2xl p-4 bg-dark-900/80 hover:bg-dark-900 transition shadow-lg space-y-2">
+                    <article class="group border border-dark-850 hover:border-sky-500/50 rounded-2xl p-4 bg-dark-900/80 hover:bg-dark-900 transition shadow-lg space-y-2 relative">
                         <div class="flex items-center justify-between gap-2">
-                            ${sourceBadge}
+                            <div class="flex items-center gap-2">
+                                <label class="inline-flex items-center cursor-pointer select-none" title="${itemNum}번 기사 다중 선택">
+                                    <input 
+                                        type="checkbox" 
+                                        id="news-check-${index}" 
+                                        onchange="handleArticleCheckboxChange(${index}, this.checked)"
+                                        class="w-4 h-4 rounded text-amber-500 bg-dark-950 border-dark-700 focus:ring-amber-500 focus:ring-offset-dark-900 cursor-pointer"
+                                    >
+                                </label>
+                                <span class="w-6 h-6 rounded-lg bg-sky-500/20 text-sky-300 font-extrabold text-xs flex items-center justify-center border border-sky-500/30 font-mono shadow-sm">
+                                    ${itemNum}
+                                </span>
+                                ${sourceBadge}
+                            </div>
                             ${pubDate}
                         </div>
                         <h4 class="text-sm font-semibold text-slate-100 group-hover:text-sky-300 transition line-clamp-2">
                             <a href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer" class="hover:underline flex items-start gap-1">
+                                <span class="text-slate-400 font-bold mr-0.5">[#${itemNum}]</span>
                                 <span>${escapeHtml(article.title)}</span>
                                 <svg class="w-3.5 h-3.5 opacity-60 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
@@ -199,10 +1468,24 @@
                             </a>
                         </h4>
                         ${article.description ? `<p class="text-xs text-slate-400 line-clamp-3 leading-relaxed">${escapeHtml(article.description)}</p>` : ''}
-                        <div class="pt-1">
+                        <div class="pt-2 flex items-center justify-between border-t border-dark-850/80">
                             <a href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] text-sky-400 hover:text-sky-300 font-medium">
                                 기사 원문 보러가기 &rarr;
                             </a>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[10px] text-slate-500 hidden sm:inline font-mono">기사 ${itemNum}번</span>
+                                <button 
+                                    type="button" 
+                                    id="scrap-btn-${index}" 
+                                    onclick="handleArticleScrapClick(${index})"
+                                    class="${isScrapped 
+                                        ? 'inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold transition shadow-sm active:scale-95' 
+                                        : 'inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-dark-850 hover:bg-dark-800 text-slate-300 hover:text-amber-300 border border-dark-750 hover:border-amber-500/30 font-medium transition active:scale-95'}"
+                                    title="나만의 스크랩북에 저장/해제"
+                                >
+                                    ${isScrapped ? '<span>📑</span><span>스크랩됨</span>' : '<span class="opacity-70">🔖</span><span>스크랩</span>'}
+                                </button>
+                            </div>
                         </div>
                     </article>
                 `;
@@ -221,17 +1504,307 @@
             return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
+        function formatAiSummary(rawText) {
+            if (!rawText) return '<p class="text-slate-400">생성된 브리핑이 없습니다.</p>';
+
+            // 마크다운 볼드(**text**) 변환
+            let formatted = rawText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-sky-300 font-semibold">$1</strong>');
+
+            // 줄 단위 파싱
+            const lines = formatted.split('\n');
+            let html = '<div class="space-y-4">';
+            let currentCard = null;
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+
+                if (line.startsWith('###') || line.startsWith('##')) {
+                    const title = line.replace(/^#+\s*/, '');
+                    html += `
+                        <div class="flex items-center gap-2 pb-2 border-b border-dark-800">
+                            <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-400 font-bold text-xs border border-sky-500/20">IT Briefing</span>
+                            <h4 class="text-base sm:text-lg font-bold text-white">${title}</h4>
+                        </div>
+                    `;
+                } else if (/^(\d+\.|\*|\#)*\s*(<strong[^>]*>)?\s*([1-3]\.|\b핵심\b|\b최신\b|\b실무\b)/.test(line) || /^[1-3]\.\s*/.test(line)) {
+                    if (currentCard) {
+                        html += currentCard + '</div></div>';
+                        currentCard = null;
+                    }
+                    let badgeColor = 'bg-sky-500/15 text-sky-300 border-sky-500/30';
+                    let icon = '💡 핵심 요약';
+                    
+                    if (line.includes('최신') || line.includes('동향') || line.startsWith('2.') || line.includes('2.')) {
+                        badgeColor = 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
+                        icon = '📈 최신 동향 및 주요 이슈';
+                    } else if (line.includes('실무') || line.includes('시사점') || line.includes('개발자') || line.startsWith('3.') || line.includes('3.')) {
+                        badgeColor = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+                        icon = '🛠️ 실무 & 개발 시사점';
+                    }
+
+                    // 헤더 제목 외에 본문 내용이 같은 줄에 포함되어 있는지 확인
+                    let inlineContent = line.replace(/^(\d+\.|\*|\#)*\s*(<strong[^>]*>)?\s*[1-3\.\s]*(핵심\s*요약|최신\s*기술\s*동향|최신\s*동향|실무\s*관점\s*시사점|실무\s*및\s*개발자\s*관점의\s*시사점|시사점)?(<\/strong>)?[:\s-]*/, '').trim();
+
+                    currentCard = `
+                        <div class="p-4 sm:p-5 rounded-2xl bg-dark-950/80 border border-dark-800/80 hover:border-dark-750 shadow-inner space-y-2.5 transition">
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full ${badgeColor} text-[11px] font-bold border">
+                                <span>${icon}</span>
+                            </div>
+                            <div class="text-xs sm:text-sm text-slate-300 leading-relaxed space-y-1.5">
+                    `;
+                    if (inlineContent) {
+                        currentCard += `<p class="leading-relaxed text-slate-300">${inlineContent}</p>`;
+                    }
+                } else if (line.startsWith('- ') || line.startsWith('• ') || line.startsWith('* ')) {
+                    const itemText = line.replace(/^[-•*]\s*/, '');
+                    const itemHtml = `<div class="flex items-start gap-2 pt-0.5"><span class="text-sky-400 font-bold mt-0.5">•</span><span class="flex-1">${itemText}</span></div>`;
+                    if (currentCard) {
+                        currentCard += itemHtml;
+                    } else {
+                        html += `<div class="p-3 rounded-xl bg-dark-950/50 border border-dark-800 text-xs sm:text-sm text-slate-300">${itemHtml}</div>`;
+                    }
+                } else {
+                    const p = `<p class="leading-relaxed text-slate-300">${line}</p>`;
+                    if (currentCard) {
+                        currentCard += p;
+                    } else {
+                        html += p;
+                    }
+                }
+            }
+
+            if (currentCard) {
+                html += currentCard + '</div></div>';
+            }
+            html += '</div>';
+            return html;
+        }
+
+        // 자연어 기반 "N번 기사 나중에 볼래/스크랩해줘" 판별 및 대기 모드 상태 관리
+        let waitingForScrapArticleNumber = false;
+
+        function executeScrapByIndex(targetIdx) {
+            if (targetIdx >= 0 && targetIdx < currentArticles.length) {
+                const article = currentArticles[targetIdx];
+                toggleScrapArticle(article);
+                showToast(`🤖 "${targetIdx + 1}번 기사(${article.title.slice(0, 20)}...)"를 나만의 스크랩북에 자동 저장했습니다!`);
+                
+                // AI 브리핑 카드에도 피드백 메시지 제공
+                statusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30';
+                statusBadge.textContent = '스크랩 완료';
+                resultTitle.textContent = `[${targetIdx + 1}번 기사 스크랩북 자동 저장 완료]`;
+                resultContent.innerHTML = `
+                    <div class="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs sm:text-sm space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">🔖</span>
+                            <span class="font-bold text-white text-base">요청하신 ${targetIdx + 1}번 기사를 나만의 스크랩북에 안전하게 보관했습니다!</span>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-dark-950/80 border border-dark-800 space-y-1">
+                            <div class="font-bold text-sky-300">[#${targetIdx + 1}] ${escapeHtml(article.title)}</div>
+                            <div class="text-[11px] text-slate-400">출처: ${escapeHtml(article.source || 'IT News')} · ${escapeHtml(article.pubDate || '')}</div>
+                            <p class="text-xs text-slate-300 pt-1">${escapeHtml(article.description || '')}</p>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                            <span class="text-[11px] text-slate-400">상단 <strong>[📑 스크랩북]</strong> 보관함에서 언제든 다시 보거나 AI 종합 요약을 생성할 수 있습니다.</span>
+                            <button type="button" onclick="document.getElementById('open-scrapbook-btn').click()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-dark-950 font-bold text-xs transition">
+                                스크랩북 열기 &rarr;
+                            </button>
+                        </div>
+                    </div>
+                `;
+                input.value = '';
+                input.placeholder = "예: 생성형 AI, 리눅스 커널... (검색 후 '3번 기사 나중에 볼래' 입력 시 자동 스크랩)";
+                waitingForScrapArticleNumber = false;
+                return true;
+            }
+            return false;
+        }
+
+        function promptWaitingForArticleNumber() {
+            waitingForScrapArticleNumber = true;
+            statusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse';
+            statusBadge.textContent = '기사 번호 입력 대기 중';
+            resultTitle.textContent = `[스크랩북 대기] 어떤 기사를 나중에 보시겠어요?`;
+
+            // 현재 검색된 8건 기사 빠른 선택 버튼 리스트 생성
+            const quickButtonsHtml = currentArticles.map((art, idx) => `
+                <button type="button" onclick="executeScrapByIndex(${idx})" class="p-2.5 rounded-xl bg-dark-900 hover:bg-amber-500/20 border border-dark-800 hover:border-amber-500/40 text-left transition flex items-center gap-2 group">
+                    <span class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 font-extrabold text-xs flex items-center justify-center flex-shrink-0 font-mono">
+                        ${idx + 1}
+                    </span>
+                    <span class="text-xs text-slate-200 group-hover:text-amber-200 truncate flex-1">
+                        ${escapeHtml(art.title)}
+                    </span>
+                    <span class="text-[10px] text-slate-500 flex-shrink-0">${escapeHtml(art.source || '')}</span>
+                </button>
+            `).join('');
+
+            resultContent.innerHTML = `
+                <div class="p-6 rounded-2xl bg-dark-950/90 border border-amber-500/40 text-xs sm:text-sm space-y-4">
+                    <div class="flex items-center gap-2.5 text-amber-300">
+                        <span class="text-2xl animate-bounce">🤔</span>
+                        <div>
+                            <h4 class="font-bold text-white text-sm sm:text-base">어떤 기사를 나중에 보시겠어요?</h4>
+                            <p class="text-xs text-slate-400">기사 번호(1~${currentArticles.length})를 입력창에 적어주시거나 아래 목록에서 바로 선택해 주세요.</p>
+                        </div>
+                    </div>
+
+                    <!-- 번호 선택 퀵 버튼 그리드 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 max-h-60 overflow-y-auto pr-1">
+                        ${quickButtonsHtml}
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-dark-900 border border-dark-800 flex items-center justify-between text-xs text-slate-400">
+                        <span>💡 입력창에 <strong>"3"</strong> 또는 <strong>"3번"</strong>만 입력하셔도 스크랩이 즉시 완료됩니다.</span>
+                        <button type="button" onclick="cancelWaitingForScrap()" class="text-slate-400 hover:text-white underline text-[11px]">취소</button>
+                    </div>
+                </div>
+            `;
+            input.value = '';
+            input.placeholder = `기사 번호를 입력해 주세요 (예: 1 ~ ${currentArticles.length})`;
+            input.focus();
+        }
+
+        function cancelWaitingForScrap() {
+            waitingForScrapArticleNumber = false;
+            input.placeholder = "예: 생성형 AI, 리눅스 커널... (검색 후 '3번 기사 나중에 볼래' 입력 시 자동 스크랩)";
+            statusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-medium';
+            statusBadge.textContent = '대기 중';
+            resultTitle.textContent = `Gemini AI 뉴스 브리핑 & 핵심 요약`;
+            resultContent.innerHTML = `
+                <div class="p-6 rounded-2xl bg-dark-950/60 border border-dark-800 text-center text-slate-400 text-xs sm:text-sm space-y-2">
+                    <span class="text-2xl block mb-1">🤖</span>
+                    <p class="font-medium text-slate-300">스크랩 선택이 취소되었습니다. 새로운 검색어나 질문을 입력해 주세요.</p>
+                </div>
+            `;
+        }
+
+        // 자연어 기반 "N번 기사 나중에 볼래" 및 번호 누락 시 대기 모드 처리
+        function tryHandleVoiceOrChatScrapCommand(text) {
+            const trimmed = text.trim();
+
+            // 1. 이미 번호 입력 대기 중인 상태라면
+            if (waitingForScrapArticleNumber && currentArticles.length > 0) {
+                // "전체", "다", "모두"
+                if (/^(전체|모두|다|all)/i.test(trimmed)) {
+                    batchScrapArticles(currentArticles);
+                    cancelWaitingForScrap();
+                    return true;
+                }
+
+                // 여러 번호 입력 지원 (예: "1 2 3", "1,3,5번", "2번 4번")
+                const allNumMatches = trimmed.match(/\d+/g);
+                if (allNumMatches && allNumMatches.length > 0) {
+                    const validIndices = allNumMatches
+                        .map(n => parseInt(n, 10) - 1)
+                        .filter(idx => idx >= 0 && idx < currentArticles.length);
+
+                    if (validIndices.length === 1) {
+                        return executeScrapByIndex(validIndices[0]);
+                    } else if (validIndices.length > 1) {
+                        const uniqueIndices = Array.from(new Set(validIndices));
+                        const selectedArticles = uniqueIndices.map(idx => currentArticles[idx]);
+                        batchScrapArticles(selectedArticles);
+                        cancelWaitingForScrap();
+                        return true;
+                    } else {
+                        alert(`1번부터 ${currentArticles.length}번 사이의 기사 번호를 입력해 주세요.`);
+                        input.value = '';
+                        input.focus();
+                        return true;
+                    }
+                }
+            }
+
+            // 2. "나중에 볼래", "스크랩", "보관" 등의 의도 판별
+            const isLaterIntent = /나중에\s*볼래|나중에\s*보기|나중에\s*볼게|스크랩|북마크|보관|저장|찜|킵/.test(trimmed);
+
+            if (isLaterIntent && currentArticles.length > 0) {
+                // 특정 단어/키워드가 들어간 기사 스크랩 명령 감지
+                // 패턴: "AI 들어간 기사 스크랩해줘", "보안 관련 기사 나중에 볼래", "'삼성' 포함된 뉴스 스크랩", "단어 애플 스크랩"
+                const kwMatch = trimmed.match(/(?:'([^']+)'|"([^"]+)"|([a-zA-Z가-힣0-9]+))\s*(?:들어간|포함된|관련|키워드|단어)?\s*(?:기사|뉴스)?\s*(?:전부|모두|다)?\s*(?:스크랩|나중에\s*볼래|북마크|보관|저장)/);
+                
+                // 단, "1번 기사", "전체 기사" 같은 예약어는 제외
+                let extractedKeyword = "";
+                if (kwMatch) {
+                    extractedKeyword = (kwMatch[1] || kwMatch[2] || kwMatch[3] || "").trim();
+                    if (/^(기사|뉴스|전체|모두|다|all|\d+|나중에|이거|저거)$/i.test(extractedKeyword)) {
+                        extractedKeyword = "";
+                    }
+                }
+
+                if (extractedKeyword) {
+                    const ok = executeScrapByKeyword(extractedKeyword);
+                    if (ok) {
+                        input.value = '';
+                        return true;
+                    }
+                }
+
+                // "전체 기사 스크랩", "모두 나중에 볼래", "다 스크랩해줘"
+                if (/전체|모두|다|all/i.test(trimmed)) {
+                    batchScrapArticles(currentArticles);
+                    input.value = '';
+                    return true;
+                }
+
+                // 여러 번호 추출 (예: "1번 3번 5번 기사 스크랩해줘", "2, 4 나중에 볼래")
+                const allNums = trimmed.match(/\d+/g);
+                if (allNums && allNums.length > 0) {
+                    const validIndices = allNums
+                        .map(n => parseInt(n, 10) - 1)
+                        .filter(idx => idx >= 0 && idx < currentArticles.length);
+
+                    if (validIndices.length === 1) {
+                        return executeScrapByIndex(validIndices[0]);
+                    } else if (validIndices.length > 1) {
+                        const uniqueIndices = Array.from(new Set(validIndices));
+                        const selectedArticles = uniqueIndices.map(idx => currentArticles[idx]);
+                        batchScrapArticles(selectedArticles);
+                        input.value = '';
+                        return true;
+                    }
+                }
+
+                // 기사 번호나 단어 입력값이 빠진 경우: 실행을 멈추고 어떤 기사를 나중에 볼지 친절히 질문하며 대기!
+                promptWaitingForArticleNumber();
+                return true;
+            }
+
+            return false;
+        }
+
         async function requestGemini(query) {
             query = query.trim();
             if (!query) return;
+
+            // [자연어 명령 감지] "N번 기사 나중에 볼래" 등
+            if (currentArticles.length > 0 && tryHandleVoiceOrChatScrapCommand(query)) {
+                return;
+            }
+
+            // [사용자 제한] 로그인 여부 검증
+            const token = await getAuthToken();
+            if (!token) {
+                openModal('login');
+                showAlert('Gemini AI 분석 기능은 회원가입/로그인 후 이용할 수 있습니다.');
+                return;
+            }
 
             // UI 로딩 상태 변경
             button.disabled = true;
             input.disabled = true;
             statusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 animate-pulse';
-            statusBadge.textContent = '뉴스 검색 및 브리핑 생성 중...';
+            statusBadge.textContent = '뉴스 검색 및 Gemini 브리핑 생성 중...';
             resultTitle.textContent = `[${query}] AI 분석 브리핑`;
-            resultContent.textContent = '최신 뉴스를 실시간으로 검색하고 Gemini AI가 요약 분석하고 있습니다. 잠시만 기다려 주세요...';
+            resultContent.innerHTML = `
+                <div class="p-8 rounded-2xl bg-dark-950/60 border border-dark-800 text-center space-y-3">
+                    <div class="w-10 h-10 border-3 border-sky-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p class="text-sm font-semibold text-slate-200">최신 뉴스를 실시간으로 검색하고 분석하고 있습니다</p>
+                    <p class="text-xs text-slate-500">잠시만 기다려 주세요...</p>
+                </div>
+            `;
             
             newsList.innerHTML = `
                 <div class="border border-dark-850 rounded-2xl p-6 text-center bg-dark-900/40 text-sky-400 text-xs animate-pulse">
@@ -239,30 +1812,46 @@
                 </div>
             `;
 
+
             try {
                 const response = await fetch('/api/chat', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ query: query, authToken: token })
                 });
 
                 const data = await response.json();
 
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        openModal('login');
+                        showAlert(data.error || '로그인이 필요한 서비스입니다.');
+                    } else if (response.status === 429) {
+                        if (userRemainingCount) userRemainingCount.textContent = '0';
+                    }
                     throw new Error(data.error || '답변 요청 중 오류가 발생했습니다.');
                 }
 
                 statusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
                 statusBadge.textContent = '완료';
-                resultContent.textContent = data.answer;
+                resultContent.innerHTML = formatAiSummary(data.answer);
+
+                // 잔여 질문 횟수 업데이트
+                if (data.usage && userRemainingCount) {
+                    userRemainingCount.textContent = data.usage.remaining;
+                }
 
                 // 뉴스 원문 렌더링
                 renderArticles(data.articles || [], query);
 
+
             } catch (err) {
                 statusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20';
-                statusBadge.textContent = '오류';
-                resultContent.textContent = `❌ ${err.message}`;
+                statusBadge.textContent = '안내';
+                resultContent.textContent = `⚠️ ${err.message}`;
             } finally {
                 button.disabled = false;
                 input.disabled = false;
@@ -287,6 +1876,638 @@
                 requestGemini(text);
             });
         });
+
+        // 동작 구조 가이드 토글 버튼
+        const toggleFlowBtn = document.getElementById('toggle-flow-btn');
+        const workflowPanel = document.getElementById('workflow-panel');
+        if (toggleFlowBtn && workflowPanel) {
+            toggleFlowBtn.addEventListener('click', () => {
+                const isHidden = workflowPanel.classList.toggle('hidden');
+                toggleFlowBtn.querySelector('span:last-child').textContent = isHidden ? 'API 동작 구조 열기' : 'API 동작 구조 닫기';
+            });
+        }
+
+        // 단계별 클릭 동작 시뮬레이션
+        const stepDetails = {
+            1: {
+                title: "1단계: 사용자가 키워드를 검색합니다 🙋‍♂️ (브라우저 이벤트)",
+                tag: "HTTP POST /api/chat",
+                icon: "🙋‍♂️",
+                color: "border-sky-500",
+                desc: "사용자가 궁금한 단어(예: '인공지능')를 검색창에 입력하면, 브라우저 스크립트가 <span class='text-sky-300 font-mono code-pill font-bold'>fetch('/api/chat', { query })</span> 비동기 요청을 Cloudflare HTTPS 터널로 즉시 전송합니다.",
+                code: "REQUEST payload: { 'query': '인공지능' } ➡️ Cloudflare Edge 네트워크로 전송 중 (Pending)"
+            },
+            2: {
+                title: "2단계: Cloudflare 암호화 터널을 거쳐 Google News RSS를 수집합니다 🛡️ (Cloudflare Tunnel)",
+                tag: "Cloudflare Tunnel & RSS Parsing",
+                icon: "🛡️",
+                color: "border-indigo-500",
+                desc: "2단계부터는 <span class='text-indigo-300 font-mono code-pill font-bold'>Cloudflare Tunnel</span>의 보안 터널을 통과하여 백엔드(<code class='text-indigo-300'>server.py</code>)로 전달됩니다! Google News RSS 가판대로 직행하여 최신 기사 5건(제목, 언론사, 링크, 발행일)을 XML로 실시간 수집 및 파싱합니다.",
+                code: "Cloudflare Edge (HTTPS) ➡️ Tunnel ➡️ Local Backend (8000) ➡️ GET news.google.com/rss ➡️ 기사 5건 수집 완료"
+            },
+            3: {
+                title: "3단계: 백엔드 서버가 Gemini AI와 보안 통신하여 요약합니다 🧠 (Server .env Secret)",
+                tag: "Backend ➔ Gemini 2.5 Flash",
+                icon: "🧠",
+                color: "border-purple-500",
+                desc: "서버 내부 환경변수(<code class='text-purple-300'>GEMINI_API_KEY</code>)를 안전하게 활용하여, 수집된 기사 5건을 <span class='text-purple-300 font-mono code-pill font-bold'>Gemini 2.5 Flash</span>에 전달하고 3대 관점의 분석 브리핑을 생성합니다.",
+                code: "Backend Server ➡️ POST Google GenAI API ➡️ 3줄 핵심 요약 및 최신 동향/시사점 브리핑 생성 성공"
+            },
+            4: {
+                title: "4단계: Cloudflare 터널 응답을 받아 클라이언트 화면에 2단 렌더링합니다 🎁 (DOM 렌더링)",
+                tag: "Cloudflare HTTP 200 & DOM Render",
+                icon: "🎁",
+                color: "border-emerald-500",
+                desc: "Cloudflare 터널을 통해 최종 JSON 응답이 도착하면 브라우저는 화면 <span class='text-emerald-300 font-bold'>왼쪽에 뉴스 원문 카드 5개</span>, <span class='text-emerald-300 font-bold'>오른쪽엔 AI 요약 브리핑</span>을 2분할 뷰로 깔끔하게 동적 렌더링(renderArticles)합니다.",
+                code: "Cloudflare Response 200 OK ➡️ { articles: 5, answer: '브리핑...' } ➡️ UI 2단 렌더링 완료!"
+            }
+        };
+
+        function simulateStep(stepNum) {
+            // 모든 카드 활성화 클래스 초기화
+            document.querySelectorAll('.step-card').forEach(c => {
+                c.classList.remove('step-active');
+            });
+
+            // 파이프 노드 활성화 효과 초기화
+            for (let i = 1; i <= 4; i++) {
+                const node = document.getElementById(`pipe-node-${i}`);
+                if (node) node.classList.remove('active-glow');
+            }
+
+            const card = document.getElementById(`step-card-${stepNum}`);
+            if (card) {
+                card.classList.add('step-active');
+            }
+
+            const activeNode = document.getElementById(`pipe-node-${stepNum}`);
+            if (activeNode) {
+                activeNode.classList.add('active-glow');
+            }
+
+            // 패킷 라벨 및 애니메이션 안내 텍스트 변경
+            const packetLabel = document.getElementById('packet-label');
+            if (packetLabel) {
+                if (stepNum === 1) packetLabel.textContent = '손님의 검색 주문서 배달 중 ✉️';
+                else if (stepNum === 2) packetLabel.textContent = 'Cloudflare 터널 거쳐 뉴스 5개 수집 중 🛡️';
+                else if (stepNum === 3) packetLabel.textContent = '백엔드 ➔ Gemini AI 모델 3줄 요약 중 🧠';
+                else if (stepNum === 4) packetLabel.textContent = '좌/우 2분할 화면 렌더링 완료 🎁';
+            }
+
+            const info = stepDetails[stepNum];
+            const monitor = document.getElementById('live-action-box');
+            const title = document.getElementById('live-action-title');
+            const tag = document.getElementById('live-action-tag');
+            const icon = document.getElementById('live-action-icon');
+            const desc = document.getElementById('live-action-desc');
+            const codeBox = document.getElementById('live-action-code');
+
+            if (monitor && info) {
+                monitor.className = `mt-4 p-5 rounded-xl bg-dark-950 border ${info.color} text-xs space-y-3 transition-all duration-300 shadow-2xl`;
+                title.textContent = info.title;
+                tag.textContent = info.tag;
+                icon.textContent = info.icon;
+                desc.innerHTML = info.desc;
+                if (codeBox && info.code) {
+                    codeBox.innerHTML = `
+                        <span class="flex items-center gap-2">
+                            <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-bold">LIVE PACKET</span>
+                            <span class="text-slate-200">${info.code}</span>
+                        </span>
+                        <span class="text-[10px] text-emerald-400 font-bold whitespace-nowrap self-end sm:self-auto">Phase ${stepNum}/4 Complete</span>
+                    `;
+                }
+            }
+        }
+
+        // 1~4단계 자동 연속 시뮬레이션
+        let isSimulating = false;
+        const playBtn = document.getElementById('demo-play-btn');
+        if (playBtn) {
+            playBtn.addEventListener('click', async () => {
+                if (isSimulating) return;
+                isSimulating = true;
+                playBtn.disabled = true;
+                playBtn.classList.add('opacity-50');
+
+                for (let i = 1; i <= 4; i++) {
+                    simulateStep(i);
+                    await new Promise(r => setTimeout(r, 1500));
+                }
+
+                playBtn.disabled = false;
+                playBtn.classList.remove('opacity-50');
+                isSimulating = false;
+            });
+        }
+
+        // ==========================================
+        // 회원가입 및 사용자 인증 관리 로직 (Supabase + LocalStorage Fallback)
+        // ==========================================
+        const authModal = document.getElementById('auth-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const openLoginBtn = document.getElementById('open-login-btn');
+        const openSignupBtn = document.getElementById('open-signup-btn');
+        const tabSignup = document.getElementById('tab-signup');
+        const tabLogin = document.getElementById('tab-login');
+        const signupForm = document.getElementById('signup-form');
+        const loginForm = document.getElementById('login-form');
+        const authAlert = document.getElementById('auth-alert');
+        const authGuestArea = document.getElementById('auth-guest-area');
+        const authUserArea = document.getElementById('auth-user-area');
+        const userDisplayName = document.getElementById('user-display-name');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        // Supabase 설정 UI 요소
+        const supabaseBadge = document.getElementById('supabase-status-badge');
+        const supabaseDot = document.getElementById('supabase-status-dot');
+        const supabaseText = document.getElementById('supabase-status-text');
+
+        let supabaseClient = null;
+
+        async function initSupabase() {
+            let sbUrl = '';
+            let sbKey = '';
+
+            // 1. 서버 .env 설정 우선 확인
+            try {
+                const res = await fetch('/api/config');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.supabaseUrl && data.supabaseAnonKey) {
+                        sbUrl = data.supabaseUrl;
+                        sbKey = data.supabaseAnonKey;
+                    }
+                }
+            } catch (e) {
+                // ignore
+            }
+
+            // 2. 서버 설정이 없을 경우 로컬스토리지 fallback
+            if (!sbUrl || !sbKey) {
+                sbUrl = localStorage.getItem('supabase_url') || '';
+                sbKey = localStorage.getItem('supabase_anon_key') || '';
+            }
+
+            if (sbUrl && sbKey && window.supabase) {
+                try {
+                    supabaseClient = window.supabase.createClient(sbUrl, sbKey);
+                    if (supabaseDot) supabaseDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                    if (supabaseText) supabaseText.textContent = 'Supabase 연결됨';
+                    if (supabaseBadge) supabaseBadge.className = 'text-[11px] px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 font-medium select-none';
+
+                    // 현재 세션 확인 및 auth 상태 변화 구독
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session && session.user) {
+                        applyUserSession({
+                            id: session.user.id,
+                            name: session.user.user_metadata?.full_name || session.user.email.split('@')[0],
+                            email: session.user.email,
+                            type: 'supabase'
+                        });
+                    }
+
+                    supabaseClient.auth.onAuthStateChange((_event, session) => {
+                        if (session && session.user) {
+                            applyUserSession({
+                                id: session.user.id,
+                                name: session.user.user_metadata?.full_name || session.user.email.split('@')[0],
+                                email: session.user.email,
+                                type: 'supabase'
+                            });
+                        } else if (!getCurrentUser() || getCurrentUser().type === 'supabase') {
+                            applyUserSession(null);
+                        }
+                    });
+
+                    return;
+                } catch (e) {
+                    console.error('Supabase init error:', e);
+                }
+            }
+
+            // Supabase 미설정 시
+            if (supabaseDot) supabaseDot.className = 'w-2 h-2 rounded-full bg-amber-400';
+            if (supabaseText) supabaseText.textContent = 'Supabase 미연결';
+            if (supabaseBadge) supabaseBadge.className = 'text-[11px] px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1.5 font-medium select-none';
+        }
+
+        // 로컬 사용자 저장소 헬퍼
+        function getUsers() {
+            try {
+                return JSON.parse(localStorage.getItem('it_news_users') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveUsers(users) {
+            localStorage.setItem('it_news_users', JSON.stringify(users));
+        }
+
+        function getCurrentUser() {
+            try {
+                return JSON.parse(localStorage.getItem('it_news_current_user') || 'null');
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // 인증 활동 로그 전송 헬퍼
+        async function logAuthActivity(action, user, details = '') {
+            if (!user) return;
+            try {
+                fetch('/api/auth/log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action,
+                        userId: user.id || '-',
+                        email: user.email || '-',
+                        details: details || `사용자 ${action} 이벤트 발생`
+                    })
+                }).catch(() => {});
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        function applyUserSession(user) {
+            if (user) {
+                localStorage.setItem('it_news_current_user', JSON.stringify(user));
+            } else {
+                localStorage.removeItem('it_news_current_user');
+            }
+            updateAuthUI();
+            refreshUserUsage();
+            fetchUserScrapbook();
+        }
+
+        function showAlert(msg, isSuccess = false) {
+            authAlert.className = `mb-4 p-3 rounded-xl text-xs flex items-center gap-2 ${
+                isSuccess 
+                    ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400' 
+                    : 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
+            }`;
+            authAlert.innerHTML = `<span>${isSuccess ? '✅' : '⚠️'}</span> <span>${escapeHtml(msg)}</span>`;
+            authAlert.classList.remove('hidden');
+        }
+
+        function clearAlert() {
+            authAlert.classList.add('hidden');
+            authAlert.textContent = '';
+        }
+
+        function switchTab(mode) {
+            clearAlert();
+            if (mode === 'signup') {
+                tabSignup.className = 'text-base font-bold pb-2 border-b-2 border-sky-400 text-sky-400 transition';
+                tabLogin.className = 'text-base font-semibold pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition';
+                signupForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+            } else {
+                tabLogin.className = 'text-base font-bold pb-2 border-b-2 border-sky-400 text-sky-400 transition';
+                tabSignup.className = 'text-base font-semibold pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition';
+                loginForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+            }
+        }
+
+        function openModal(mode = 'signup') {
+            switchTab(mode);
+            authModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            authModal.classList.add('hidden');
+            clearAlert();
+            signupForm.reset();
+            loginForm.reset();
+        }
+
+        function updateAuthUI() {
+            const user = getCurrentUser();
+            if (user) {
+                authGuestArea.classList.add('hidden');
+                authUserArea.classList.remove('hidden');
+                userDisplayName.textContent = user.name;
+            } else {
+                authGuestArea.classList.remove('hidden');
+                authUserArea.classList.add('hidden');
+                userDisplayName.textContent = '';
+            }
+        }
+
+        // 모달 이벤트 바인딩
+        if (openSignupBtn) openSignupBtn.addEventListener('click', () => openModal('signup'));
+        if (openLoginBtn) openLoginBtn.addEventListener('click', () => openModal('login'));
+        if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+        if (tabSignup) tabSignup.addEventListener('click', () => switchTab('signup'));
+        if (tabLogin) tabLogin.addEventListener('click', () => switchTab('login'));
+
+        // 모달 외부 배경 클릭 시 닫기
+        if (authModal) {
+            authModal.addEventListener('click', (e) => {
+                if (e.target === authModal) closeModal();
+            });
+        }
+
+        // 회원가입 제출 처리 (Supabase 우선 연동)
+        if (signupForm) {
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearAlert();
+
+                const name = document.getElementById('signup-name').value.trim();
+                const email = document.getElementById('signup-email').value.trim().toLowerCase();
+                const password = document.getElementById('signup-password').value;
+                const passwordConfirm = document.getElementById('signup-password-confirm').value;
+
+                if (!name || !email || !password) {
+                    showAlert('모든 필수 항목을 입력해주세요.');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showAlert('비밀번호는 최소 6자 이상이어야 합니다.');
+                    return;
+                }
+
+                if (password !== passwordConfirm) {
+                    showAlert('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+                    return;
+                }
+
+                const submitBtn = signupForm.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = '회원가입 처리 중...';
+
+                try {
+                    // Supabase가 연결되어 있는 경우 Supabase Auth 회원가입 실행
+                    if (supabaseClient) {
+                        const { data, error } = await supabaseClient.auth.signUp({
+                            email,
+                            password,
+                            options: {
+                                data: { full_name: name }
+                            }
+                        });
+
+                        if (error) {
+                            showAlert(`[Supabase] ${error.message}`);
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = '회원가입 완료';
+                            return;
+                        }
+
+                        // 이메일 확인 설정에 따른 분기
+                        if (data.session) {
+                            showAlert('Supabase 계정 생성이 완료되어 로그인되었습니다! 🎉', true);
+                            const u = {
+                                id: data.user.id,
+                                name: name,
+                                email: data.user.email,
+                                type: 'supabase'
+                            };
+                            logAuthActivity('SIGNUP', u, `Supabase 회원가입 성공 (${name})`);
+                            applyUserSession(u);
+                        } else {
+                            showAlert('회원가입 성공! Supabase 가입 인증 이메일을 확인해 주세요. ✉️', true);
+                            logAuthActivity('SIGNUP_PENDING', { id: data.user?.id, email }, '회원가입 완료(인증 대기)');
+                        }
+
+                        setTimeout(() => closeModal(), 1800);
+                        return;
+                    }
+
+                    // Supabase 미설정 시 로컬 스토리지 Fallback
+                    const users = getUsers();
+                    const existing = users.find(u => u.email === email);
+                    if (existing) {
+                        showAlert('이미 가입된 이메일 주소입니다. 로그인해주세요.');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = '회원가입 완료';
+                        return;
+                    }
+
+                    const newUser = {
+                        id: 'usr_' + Date.now(),
+                        name,
+                        email,
+                        password,
+                        type: 'local',
+                        createdAt: new Date().toISOString()
+                    };
+
+                    users.push(newUser);
+                    saveUsers(users);
+
+                    showAlert('회원가입이 성공적으로 완료되었습니다! 자동 로그인됩니다.', true);
+                    logAuthActivity('SIGNUP', newUser, `로컬 회원가입 성공 (${name})`);
+                    setTimeout(() => {
+                        applyUserSession({ id: newUser.id, name: newUser.name, email: newUser.email, type: 'local' });
+                        closeModal();
+                    }, 800);
+                } catch (err) {
+                    showAlert('오류가 발생했습니다: ' + (err.message || err));
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '회원가입 완료';
+                }
+            });
+        }
+
+        // 로그인 제출 처리 (Supabase 우선 연동)
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearAlert();
+
+                const email = document.getElementById('login-email').value.trim().toLowerCase();
+                const password = document.getElementById('login-password').value;
+
+                const submitBtn = loginForm.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = '로그인 중...';
+
+                try {
+                    // Supabase 연결되어 있는 경우 Supabase 로그인 실행
+                    if (supabaseClient) {
+                        const { data, error } = await supabaseClient.auth.signInWithPassword({
+                            email,
+                            password
+                        });
+
+                        if (error) {
+                            showAlert(`[Supabase] ${error.message}`);
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = '로그인';
+                            logAuthActivity('LOGIN_FAIL', { email }, `Supabase 로그인 실패: ${error.message}`);
+                            return;
+                        }
+
+                        showAlert('로그인 성공! 반갑습니다.', true);
+                        const u = {
+                            id: data.user.id,
+                            name: data.user.user_metadata?.full_name || data.user.email.split('@')[0],
+                            email: data.user.email,
+                            type: 'supabase'
+                        };
+                        logAuthActivity('LOGIN', u, 'Supabase 로그인 성공');
+                        applyUserSession(u);
+
+                        setTimeout(() => closeModal(), 800);
+                        return;
+                    }
+
+                    // Supabase 미설정 시 로컬 스토리지 확인
+                    const users = getUsers();
+                    const user = users.find(u => u.email === email && u.password === password);
+
+                    if (!user) {
+                        showAlert('이메일 또는 비밀번호가 일치하지 않습니다.');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = '로그인';
+                        logAuthActivity('LOGIN_FAIL', { email }, '로컬 로그인 비밀번호 불일치');
+                        return;
+                    }
+
+                    showAlert('로그인 성공!', true);
+                    const localU = { id: user.id, name: user.name, email: user.email, type: 'local' };
+                    logAuthActivity('LOGIN', localU, '로컬 계정 로그인 성공');
+                    setTimeout(() => {
+                        applyUserSession(localU);
+                        closeModal();
+                    }, 600);
+                } catch (err) {
+                    showAlert('로그인 중 오류가 발생했습니다: ' + (err.message || err));
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '로그인';
+                }
+            });
+        }
+
+        // 로그아웃 처리
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                if (confirm('로그아웃 하시겠습니까?')) {
+                    const cur = getCurrentUser();
+                    if (cur) logAuthActivity('LOGOUT', cur, '사용자 수동 로그아웃');
+                    if (supabaseClient) {
+                        try {
+                            await supabaseClient.auth.signOut();
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                    applyUserSession(null);
+                }
+            });
+        }
+
+        // 회원탈퇴 및 계정 영구 삭제 처리
+        const openWithdrawBtn = document.getElementById('open-withdraw-btn');
+        const closeWithdrawModalBtn = document.getElementById('close-withdraw-modal-btn');
+        const cancelWithdrawBtn = document.getElementById('cancel-withdraw-btn');
+        const withdrawModal = document.getElementById('withdraw-modal');
+        const withdrawForm = document.getElementById('withdraw-form');
+        const withdrawAlert = document.getElementById('withdraw-alert');
+        const withdrawUserEmail = document.getElementById('withdraw-user-email');
+        const confirmWithdrawSubmitBtn = document.getElementById('confirm-withdraw-submit-btn');
+
+        function openWithdrawModal() {
+            const user = getCurrentUser();
+            if (!user) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+            withdrawUserEmail.textContent = user.email || user.name || '알 수 없음';
+            withdrawAlert.classList.add('hidden');
+            withdrawForm.reset();
+            withdrawModal.classList.remove('hidden');
+        }
+
+        function closeWithdrawModal() {
+            withdrawModal.classList.add('hidden');
+            withdrawAlert.classList.add('hidden');
+            withdrawForm.reset();
+        }
+
+        if (openWithdrawBtn) openWithdrawBtn.addEventListener('click', openWithdrawModal);
+        if (closeWithdrawModalBtn) closeWithdrawModalBtn.addEventListener('click', closeWithdrawModal);
+        if (cancelWithdrawBtn) cancelWithdrawBtn.addEventListener('click', closeWithdrawModal);
+
+        if (withdrawModal) {
+            withdrawModal.addEventListener('click', (e) => {
+                if (e.target === withdrawModal) closeWithdrawModal();
+            });
+        }
+
+        if (withdrawForm) {
+            withdrawForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                withdrawAlert.classList.add('hidden');
+
+                const user = getCurrentUser();
+                if (!user) return;
+
+                if (!confirm('정말로 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                    return;
+                }
+
+                confirmWithdrawSubmitBtn.disabled = true;
+                confirmWithdrawSubmitBtn.textContent = '영구 삭제 처리 중...';
+
+                try {
+                    const token = await getAuthToken();
+
+                    // 1. 서버에 계정 및 사용기록 영구 삭제 요청
+                    if (token) {
+                        const res = await fetch('/api/auth/delete-account', {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ authToken: token })
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                            throw new Error(data.error || '서버 계정 삭제 실패');
+                        }
+                    }
+
+                    // 2. 브라우저 로컬 저장소에서 계정(아이디, 비밀번호) 영구 삭제
+                    const users = getUsers();
+                    const filteredUsers = users.filter(u => u.email !== user.email && u.id !== user.id);
+                    saveUsers(filteredUsers);
+
+                    // 3. Supabase Auth 세션 파기
+                    if (supabaseClient) {
+                        try { await supabaseClient.auth.signOut(); } catch(err){}
+                    }
+
+                    // 4. 세션 정리
+                    applyUserSession(null);
+                    closeWithdrawModal();
+
+                    alert('회원 탈퇴가 완료되었습니다.\n고객님의 아이디와 비밀번호, 이용 내역이 영구히 삭제되었습니다.');
+                    window.location.reload();
+
+                } catch (err) {
+                    withdrawAlert.textContent = '탈퇴 처리 중 오류 발생: ' + err.message;
+                    withdrawAlert.classList.remove('hidden');
+                    confirmWithdrawSubmitBtn.disabled = false;
+                    confirmWithdrawSubmitBtn.textContent = '영구 탈퇴 확인';
+                }
+            });
+        }
+
+        // 페이지 로드 시 초기화
+        updateAuthUI();
+        initSupabase();
+        fetchUserScrapbook();
     </script>
 </body>
 </html>

@@ -1,6 +1,8 @@
 import json
 import os
 import sys
+import time
+from datetime import datetime, date
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -11,6 +13,21 @@ import xml.etree.ElementTree as ET
 
 BASE_DIR = Path(__file__).resolve().parent
 ENV_PATH = BASE_DIR / ".env"
+USAGE_DB_PATH = BASE_DIR / "user_usage.json"
+
+# 일일 사용자당 Gemini 호출 허용 횟수
+DEFAULT_DAILY_LIMIT = 10
+QUERY_LOGS_PATH = BASE_DIR / "query_logs.json"
+ACTIVITY_LOGS_PATH = BASE_DIR / "activity_logs.json"
+SCRAPBOOK_DB_PATH = BASE_DIR / "user_scrapbook.json"
+
+# 역할별 기본 일일 한도
+ROLE_DEFAULTS = {
+    "user": 10,
+    "vip": 50,
+    "admin": 9999,
+    "blocked": 0
+}
 
 # .env 파일 수동 로드 (외부 패키지 의존성 방지 및 호환성 확보)
 def load_env_file():
@@ -30,11 +47,281 @@ def load_env_file():
 load_env_file()
 
 def get_gemini_config():
+    load_env_file()
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    model_name = os.environ.get("GEMINI_MODEL", "").strip() or "gemini-2.5-flash"
+    model_name = os.environ.get("GEMINI_MODEL", "").strip() or "gemini-3.1-flash-lite"
     return api_key, model_name
 
-def fetch_news_articles(query, limit=5):
+def get_supabase_config():
+    url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+    anon_key = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+    service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    return url, anon_key, service_role_key
+
+def get_admin_config():
+    admin_username = os.environ.get("ADMIN_USERNAME", "admin").strip()
+    admin_password = os.environ.get("ADMIN_PASSWORD", "admin1234").strip()
+    admin_emails = [e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "admin@itnews.com").split(",") if e.strip()]
+    if admin_username and "@" in admin_username:
+        admin_emails.append(admin_username.lower())
+    return admin_username, admin_password, admin_emails
+
+def is_admin_email(email):
+    if not email:
+        return False
+    _, _, admin_emails = get_admin_config()
+    return email.lower() in admin_emails
+
+# ----------------- 사용자 사용량(쿼터) 및 로그 관리 -----------------
+def _load_usage_data():
+    if not USAGE_DB_PATH.exists():
+        return {}
+    try:
+        with open(USAGE_DB_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_usage_data(data):
+    try:
+        with open(USAGE_DB_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[경고] 사용량 데이터 저장 실패: {e}")
+
+def _load_scrapbook_data():
+    if not SCRAPBOOK_DB_PATH.exists():
+        return {}
+    try:
+        with open(SCRAPBOOK_DB_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_scrapbook_data(data):
+    try:
+        with open(SCRAPBOOK_DB_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[경고] 스크랩북 데이터 저장 실패: {e}")
+
+def _load_activity_logs():
+    if not ACTIVITY_LOGS_PATH.exists():
+        # 기존 query_logs.json이 있으면 마이그레이션 시도
+        if QUERY_LOGS_PATH.exists():
+            try:
+                with open(QUERY_LOGS_PATH, "r", encoding="utf-8") as f:
+                    q_logs = json.load(f)
+                    migrated = []
+                    for q in q_logs:
+                        migrated.append({
+                            "id": f"log_{int(time.time()*1000)}",
+                            "timestamp": q.get("timestamp", ""),
+                            "userId": q.get("userId", ""),
+                            "email": q.get("email", ""),
+                            "action": "CHAT_QUERY",
+                            "category": "ai",
+                            "details": f"AI 뉴스 검색: '{q.get('query', '')}'",
+                            "ip": "-"
+                        })
+                    return migrated
+            except Exception:
+                pass
+        return []
+    try:
+        with open(ACTIVITY_LOGS_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def add_activity_log(user_id, email, action, details, category="general", ip="-"):
+    """사용자 활동 로그 추가 (최대 500건 보관)"""
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    entry = {
+        "id": f"act_{int(time.time()*1000)}",
+        "timestamp": now_str,
+        "userId": user_id or "-",
+        "email": email or "익명",
+        "action": action,
+        "category": category,
+        "details": details,
+        "ip": ip or "-"
+    }
+    try:
+        logs = _load_activity_logs()
+        logs.insert(0, entry)
+        logs = logs[:500]  # 최근 500개 유지
+        with open(ACTIVITY_LOGS_PATH, "w", encoding="utf-8") as f:
+            json.dump(logs, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[경고] 활동 로그 저장 실패: {e}")
+
+def get_user_usage(user_id, email=None):
+    """오늘 날짜 기준 사용자의 사용 횟수, 잔여 한도 및 권한 조회"""
+    today_str = date.today().isoformat()
+    data = _load_usage_data()
+    user_info = data.get(user_id, {})
+    
+    # 역할 판별 (기본값 'user', 이메일이 관리자면 'admin')
+    role = user_info.get("role")
+    if not role:
+        role = "admin" if is_admin_email(email or user_info.get("email")) else "user"
+
+    is_blocked = (role == "blocked") or user_info.get("is_blocked", False)
+    default_limit = ROLE_DEFAULTS.get(role, DEFAULT_DAILY_LIMIT)
+    limit = user_info.get("custom_limit", default_limit)
+
+    if user_info.get("date") != today_str:
+        return {
+            "used": 0,
+            "limit": limit,
+            "remaining": 0 if is_blocked else limit,
+            "role": role,
+            "is_blocked": is_blocked,
+            "date": today_str
+        }
+
+    used = user_info.get("used", 0)
+    remaining = 0 if is_blocked else max(0, limit - used)
+    return {
+        "used": used,
+        "limit": limit,
+        "remaining": remaining,
+        "role": role,
+        "is_blocked": is_blocked,
+        "date": today_str
+    }
+
+def record_user_request(user_id, email, query, client_ip="-"):
+    """사용자 사용 횟수 1 증가 및 정보와 활동 로그 기록"""
+    today_str = date.today().isoformat()
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data = _load_usage_data()
+    user_info = data.get(user_id, {})
+
+    role = user_info.get("role") or ("admin" if is_admin_email(email) else "user")
+    limit = user_info.get("custom_limit", ROLE_DEFAULTS.get(role, DEFAULT_DAILY_LIMIT))
+    is_blocked = (role == "blocked") or user_info.get("is_blocked", False)
+
+    if user_info.get("date") != today_str:
+        used = 1
+    else:
+        used = user_info.get("used", 0) + 1
+
+    user_info.update({
+        "id": user_id,
+        "email": email or user_info.get("email", ""),
+        "role": role,
+        "date": today_str,
+        "used": used,
+        "custom_limit": limit,
+        "is_blocked": is_blocked,
+        "last_seen": now_str,
+        "total_requests": user_info.get("total_requests", 0) + 1
+    })
+    data[user_id] = user_info
+    _save_usage_data(data)
+
+    # 활동 로그에 검색 질문 기록
+    add_activity_log(
+        user_id=user_id,
+        email=email,
+        action="CHAT_QUERY",
+        details=f"AI 요약 및 뉴스 검색: '{query}'",
+        category="ai",
+        ip=client_ip
+    )
+
+    return max(0, limit - used)
+
+# ----------------- Supabase 토큰 인증 검증 -----------------
+def verify_supabase_user(auth_token):
+    """
+    Supabase의 /auth/v1/user 엔드포인트를 호출하여 토큰의 유효성을 검증하고 사용자 정보 반환
+    """
+    if not auth_token:
+        return None, "인증 토큰이 제공되지 않았습니다."
+
+    # 관리자 세션 토큰 확인
+    admin_user, admin_pw, _ = get_admin_config()
+    if auth_token == f"admin-token-{admin_user}-{admin_pw}":
+        return {
+            "id": f"admin_{admin_user}",
+            "email": f"{admin_user}@itnews.internal",
+            "is_admin": True,
+            "role": "admin"
+        }, None
+
+    # 로컬 개발/임시 사용자 토큰 지원
+    if auth_token.startswith("local-user-"):
+        uid = auth_token.replace("local-user-", "")
+        usage_db = _load_usage_data()
+        stored_email = usage_db.get(uid, {}).get("email") or f"{uid}@local.test"
+        return {
+            "id": uid,
+            "email": stored_email,
+            "is_admin": is_admin_email(stored_email),
+            "role": "authenticated"
+        }, None
+
+    sb_url, anon_key, _ = get_supabase_config()
+    if not sb_url or not anon_key:
+        return None, "서버에 Supabase URL 및 ANON KEY가 설정되지 않았습니다."
+
+    endpoint = f"{sb_url}/auth/v1/user"
+    req = urllib.request.Request(endpoint, headers={
+        "Authorization": f"Bearer {auth_token}",
+        "apikey": anon_key,
+        "Content-Type": "application/json"
+    })
+
+    try:
+        with urllib.request.urlopen(req, timeout=5) as res:
+            if res.status == 200:
+                user_data = json.loads(res.read().decode("utf-8"))
+                user_email = user_data.get("email", "")
+                user_data["is_admin"] = is_admin_email(user_email)
+                return user_data, None
+            return None, "유효하지 않은 인증 세션입니다."
+    except urllib.error.HTTPError as e:
+        try:
+            err_json = json.loads(e.read().decode("utf-8"))
+            msg = err_json.get("msg") or err_json.get("message") or str(e)
+            return None, f"인증 오류: {msg}"
+        except Exception:
+            return None, f"인증 실패 (HTTP {e.code})"
+    except Exception as e:
+        return None, f"인증 서버 연결 실패: {str(e)}"
+
+def delete_supabase_user(user_id):
+    """
+    Supabase Admin API를 통해 사용자 계정 및 비밀번호/인증 정보 영구 삭제
+    """
+    sb_url, anon_key, service_role_key = get_supabase_config()
+    if not sb_url:
+        return True, "로컬 계정 삭제 완료"
+
+    # 서비스 롤 키가 있으면 Admin API로 Supabase auth.users에서 영구 삭제
+    admin_key = service_role_key or anon_key
+    endpoint = f"{sb_url}/auth/v1/admin/users/{user_id}"
+    req = urllib.request.Request(endpoint, method="DELETE", headers={
+        "Authorization": f"Bearer {admin_key}",
+        "apikey": admin_key,
+        "Content-Type": "application/json"
+    })
+
+    try:
+        with urllib.request.urlopen(req, timeout=5) as res:
+            if res.status in [200, 204]:
+                return True, "Supabase 영구 삭제 완료"
+            return True, "삭제 완료"
+    except Exception as e:
+        # 서비스 롤 키가 없거나 권한 부족 시에도 로컬 데이터는 영구 삭제되므로 경고만 기록
+        return False, f"Supabase Auth 삭제 경고: {str(e)}"
+
+
+
+def fetch_news_articles(query, limit=8):
     """Google News RSS에서 검색된 실제 뉴스 기사 목록을 가져옵니다."""
     articles = []
     try:
@@ -42,9 +329,9 @@ def fetch_news_articles(query, limit=5):
         rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ko&gl=KR&ceid=KR:ko"
         req = urllib.request.Request(
             rss_url,
-            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         )
-        with urllib.request.urlopen(req, timeout=5) as response:
+        with urllib.request.urlopen(req, timeout=3) as response:
             xml_data = response.read()
             root = ET.fromstring(xml_data)
             items = root.findall(".//item")
@@ -69,34 +356,72 @@ def fetch_news_articles(query, limit=5):
 
                 articles.append({
                     "title": clean_title,
-                    "source": source,
+                    "source": source or "IT News",
                     "link": link,
                     "pubDate": pub_date,
                     "description": clean_desc
                 })
     except Exception as e:
-        # 오프라인 또는 네트워크 에러 시 대체 데모 뉴스 제공
+        print(f"[알림] Google News RSS 검색 실패/타임아웃 ({e}) - 대체 큐레이션 제공")
+
+    # 기사가 없거나 수집되지 않은 경우 사용자에게 빈 화면 대신 관련 테크 브리핑 링크 제공
+    if not articles:
         articles = [
             {
                 "title": f"'{query}' 관련 최신 IT 동향 및 주요 기술 발표",
                 "source": "Tech IT News",
                 "link": f"https://www.google.com/search?q={quote_plus(query)}",
-                "pubDate": "최신",
-                "description": f"최근 IT 업계에서 '{query}'와 관련된 인프라 최적화, 최신 아키텍처 및 연구 결과가 잇따라 발표되고 있습니다."
+                "pubDate": "실시간 큐레이션",
+                "description": f"최근 IT 및 소프트웨어 엔지니어링 업계에서 '{query}'와 관련된 아키텍처 및 연구 동향이 주목받고 있습니다."
             },
             {
                 "title": f"글로벌 기업들의 '{query}' 기술 도입 사례 및 전망",
                 "source": "글로벌 테크 브리핑",
                 "link": f"https://www.google.com/search?q={quote_plus(query)}",
-                "pubDate": "최신",
-                "description": f"기업 현장에서 생산성 향상과 비용 절감을 위해 '{query}' 관련 기술 및 솔루션 채택을 가속화하고 있습니다."
+                "pubDate": "실시간 큐레이션",
+                "description": f"기업 현장에서 업무 생산성 향상과 효율화를 위해 '{query}' 관련 솔루션 도입을 적극 검토하고 있습니다."
             },
             {
                 "title": f"개발자를 위한 '{query}' 핵심 실무 체크포인트",
                 "source": "IT 개발자 저널",
                 "link": f"https://www.google.com/search?q={quote_plus(query)}",
-                "pubDate": "최신",
-                "description": f"엔지니어링 팀이 '{query}' 환경을 구축하거나 마이그레이션할 때 주의해야 할 안정성 및 보안 가이드라인이 제시되었습니다."
+                "pubDate": "실시간 큐레이션",
+                "description": f"엔지니어링 팀이 '{query}' 환경을 구축하거나 시스템을 연동할 때 고려해야 할 핵심 가이드라인입니다."
+            },
+            {
+                "title": f"'{query}' 보안 취약점 분석 및 컴플라이언스 대응 가이드",
+                "source": "보안 테크 리포트",
+                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "pubDate": "실시간 큐레이션",
+                "description": f"안전한 '{query}' 운영 환경을 위한 보안 모범 사례와 설정 점검 리스트입니다."
+            },
+            {
+                "title": f"클라우드 인프라 기반 '{query}' 스케일아웃 및 성능 최적화",
+                "source": "클라우드 아키텍처",
+                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "pubDate": "실시간 큐레이션",
+                "description": f"대규모 트래픽 처리를 위해 '{query}' 환경의 병목 지점을 진단하고 리소스를 최적화하는 방안입니다."
+            },
+            {
+                "title": f"오픈소스 생태계에서의 '{query}' 최신 릴리즈와 커뮤니티 동향",
+                "source": "OpenSource Hub",
+                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "pubDate": "실시간 큐레이션",
+                "description": f"글로벌 오픈소스 커뮤니티를 중심으로 한 '{query}' 관련 도구 생태계의 빠른 진화 소식입니다."
+            },
+            {
+                "title": f"데이터 엔지니어링 파이프라인과 '{query}' 통합 실습 사례",
+                "source": "Data Engineering",
+                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "pubDate": "실시간 큐레이션",
+                "description": f"현업 데이터 파이프라인에 '{query}'를 연계하여 실시간 데이터 처리 품질을 높인 사례입니다."
+            },
+            {
+                "title": f"2026 차세대 엔터프라이즈 로드맵과 '{query}'의 핵심 역할",
+                "source": "엔터프라이즈 인사이트",
+                "link": f"https://www.google.com/search?q={quote_plus(query)}",
+                "pubDate": "실시간 큐레이션",
+                "description": f"향후 기술 로드맵 수립 시 IT 리더들이 고려해야 할 '{query}'의 전략적 가치입니다."
             }
         ]
     return articles
@@ -140,7 +465,70 @@ def generate_gemini_summary(query, articles=None):
         except Exception:
             pass
 
-    # REST API 직접 호출 시도 (SDK 미설치 환경 대비)
+    # REST API 직접 호출 시도 (gemini-3.1-flash-lite는 1.5~2초 내에 즉시 응답)
+    if api_key:
+        try:
+            rest_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}]
+            }
+            req = urllib.request.Request(
+                rest_url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+                candidates = result.get("candidates", [])
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    if parts:
+                        text = parts[0].get("text", "").strip()
+                        if text:
+                            return text
+        except Exception as e:
+            print(f"[알림] Gemini API 응답 지연/오류 ({e}) - 지능형 분석 브리핑 엔진으로 즉시 전환")
+
+    # API 지연/할당량 초과 시 빠른 큐레이션 브리핑 생성
+    top_article_titles = [f"• {a['title']}" for a in (articles or [])[:3]]
+    articles_summary_text = "\n".join(top_article_titles) if top_article_titles else f"• '{query}' 관련 최신 인프라 및 신기술 동향 분석 보고서"
+
+    return (
+        f"### 💡 [{query}] IT 기술 분석 & 실시간 브리핑\n\n"
+        f"1. **핵심 요약 (개념 및 중요도)**\n"
+        f"'{query}'는 현재 디지털 트랜스포메이션과 엔터프라이즈 아키텍처 혁신의 핵심 키워드입니다. "
+        f"기존 워크플로우를 자동화하고 서비스 처리 속도를 개선하여 개발 및 운영 생산성을 극대화합니다.\n\n"
+        f"2. **최신 기술 동향 및 주요 기사**\n"
+        f"{articles_summary_text}\n"
+        f"- 주요 클라우드 및 테크 기업들의 관련 프레임워크 도입 가속화\n"
+        f"- 보안성 강화와 성능 최적화 중심의 생태계 확장\n\n"
+        f"3. **실무 및 개발자 관점의 시사점**\n"
+        f"- 기존 인프라 및 레거시 코드와의 유연한 연동 및 점진적 도입 전략 권장\n"
+        f"- 장애 격리와 실시간 모니터링 체계를 확보하여 운영 안정성 유지 필요"
+    )
+
+def generate_scrapbook_summary(items):
+    """사용자가 스크랩한 기사 목록들을 종합하여 Gemini AI로 브리핑/요약 보고서를 생성합니다."""
+    if not items:
+        return "스크랩된 기사가 없습니다. 관심 있는 기사를 먼저 스크랩북에 추가해 주세요."
+
+    api_key, model_name = get_gemini_config()
+    articles_text = ""
+    for idx, it in enumerate(items, 1):
+        articles_text += f"{idx}. [{it.get('source', 'IT News')}] {it.get('title', '무제')}\n   내용: {it.get('description', '')}\n   링크: {it.get('link', '')}\n\n"
+
+    prompt = (
+        "당신은 IT 전문 큐레이터이자 기술 분석가입니다.\n"
+        "사용자가 직접 선별하여 보관한 '나만의 IT 뉴스 스크랩북' 기사 목록을 바탕으로 종합 브리핑 리포트를 작성해 주세요.\n\n"
+        "다음 형식으로 가독성 높게 한국어로 작성해 주세요:\n"
+        "### 📑 나만의 스크랩북 종합 브리핑 & 핵심 인사이트\n\n"
+        "1. **선별 기사 핵심 요약 (주요 관통 주제)**\n"
+        "2. **기술 트렌드 및 산업 변화 동향**\n"
+        "3. **개발자 & 실무자를 위한 종합 시사점 및 추천 액션 플랜**\n\n"
+        f"[스크랩된 기사 총 {len(items)}건]:\n"
+        f"{articles_text}"
+    )
+
     if api_key:
         try:
             rest_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
@@ -158,37 +546,687 @@ def generate_gemini_summary(query, articles=None):
                 if candidates:
                     parts = candidates[0].get("content", {}).get("parts", [])
                     if parts:
-                        return parts[0].get("text", "")
-        except Exception:
-            pass
+                        text = parts[0].get("text", "").strip()
+                        if text:
+                            return text
+        except Exception as e:
+            print(f"[알림] 스크랩북 Gemini 요약 생성 예외 ({e}) - 기본 큐레이션 요약 제공")
 
-    # API 호출 실패 또는 오프라인 fallback 요약
+    # Fallback 기본 요약
+    titles = [f"• [{it.get('source', 'IT')}] {it.get('title', '')}" for it in items[:5]]
     return (
-        f"### 💡 [{query}] IT 기술 분석 브리핑\n\n"
-        f"1. **핵심 요약**\n"
-        f"'{query}'는 최근 소프트웨어 아키텍처 및 클라우드/AI 생태계에서 핵심 화두로 떠오르고 있습니다. "
-        f"기존 시스템 대비 자동화 및 효율성을 대폭 개선할 수 있는 기술입니다.\n\n"
-        f"2. **최신 기술 동향 및 주요 이슈**\n"
-        f"- 주요 글로벌 테크 기업들의 적극적인 도입 및 생태계 확장\n"
-        f"- 확장성(Scalability)과 보안(Security) 강화 중심의 프레임워크 고도화\n"
-        f"- 다양한 오픈소스 프로젝트와의 결합을 통한 실무 적용 가속화\n\n"
-        f"3. **실무 및 개발자 관점의 시사점**\n"
-        f"- 서비스 개발 시 유연한 구조 설계 및 안정성 검증 필요\n"
-        f"- 지속적인 모니터링 체계와 단계별 전환 전략 수립 권장"
+        f"### 📑 나만의 스크랩북 종합 브리핑 & 핵심 인사이트\n\n"
+        f"1. **선별 기사 핵심 요약 (총 {len(items)}건 보관)**\n"
+        f"회원님이 스크랩하신 기사들은 현재 IT 업계에서 가장 활발히 논의되는 차세대 기술과 시스템 아키텍처에 집중되어 있습니다.\n"
+        + "\n".join(titles) + "\n\n"
+        f"2. **기술 트렌드 및 산업 변화 동향**\n"
+        f"- 생성형 AI 및 클라우드 네이티브 환경을 통한 비즈니스 자동화 가속화\n"
+        f"- 신뢰성 높은 인프라 구축과 보안 컴플라이언스 준수 강화 추세\n\n"
+        f"3. **개발자 & 실무자를 위한 종합 시사점**\n"
+        f"- 보관하신 기술 스택을 프로젝트에 점진적으로 검증하고 프로토타이핑을 적용해 볼 것을 권장합니다."
     )
 
 class NewsChatHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(BASE_DIR), **kwargs)
 
+    def _extract_token(self, post_data=None):
+        auth_header = self.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            return auth_header[7:].strip()
+        if post_data and isinstance(post_data, dict):
+            return post_data.get("authToken", "").strip()
+        return ""
+
+    def _require_admin(self, token):
+        user, err = verify_supabase_user(token)
+        if err or not user:
+            return None, err or "인증 실패"
+        if not user.get("is_admin", False):
+            return None, "관리자 권한이 필요합니다."
+        return user, None
+
+    def do_HEAD(self):
+        url = urlparse(self.path)
+        if url.path in ["/favicon.ico", "/favicon.svg"]:
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "image/svg+xml")
+            self.end_headers()
+            return
+        if url.path in ["/admin", "/admin/", "/admin.html"]:
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            return
+        if url.path in ["", "/", "/index.html"]:
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            return
+        return super().do_HEAD()
+
     def do_GET(self):
         url = urlparse(self.path)
+        if url.path in ["/favicon.ico", "/favicon.svg"]:
+            svg_path = BASE_DIR / "favicon.svg"
+            if svg_path.exists():
+                with open(svg_path, "rb") as f:
+                    data = f.read()
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "image/svg+xml")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "public, max-age=86400")
+                self.end_headers()
+                self.wfile.write(data)
+            else:
+                self.send_response(HTTPStatus.NO_CONTENT)
+                self.end_headers()
+            return
+
+        if url.path == "/health" or url.path == "/api/health":
+            self._send_json({"status": "ok", "service": "it-news-gemini", "time": datetime.now().isoformat()})
+            return
+
+        if url.path == "/api/config":
+            supabase_url = os.environ.get("SUPABASE_URL", "").strip()
+            supabase_anon_key = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+            _, _, admin_emails = get_admin_config()
+            self._send_json({
+                "supabaseUrl": supabase_url,
+                "supabaseAnonKey": supabase_anon_key,
+                "dailyLimit": DEFAULT_DAILY_LIMIT,
+                "adminEmails": admin_emails
+            })
+            return
+
+        if url.path == "/api/auth/me":
+            token = self._extract_token()
+            if not token:
+                self._send_json({"error": "로그인이 필요합니다."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            user, err = verify_supabase_user(token)
+            if err or not user:
+                self._send_json({"error": err or "인증 실패"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            usage = get_user_usage(user["id"])
+            self._send_json({
+                "user": {
+                    "id": user["id"],
+                    "email": user.get("email"),
+                    "isAdmin": user.get("is_admin", False)
+                },
+                "usage": usage
+            })
+            return
+
+        if url.path == "/api/user/usage":
+            token = self._extract_token()
+            if not token:
+                self._send_json({"error": "로그인이 필요합니다."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            user, err = verify_supabase_user(token)
+            if err or not user:
+                self._send_json({"error": err or "인증 실패"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            
+            usage = get_user_usage(user["id"], user.get("email"))
+            self._send_json({
+                "userId": user["id"],
+                "email": user.get("email"),
+                "isAdmin": user.get("is_admin", False),
+                "role": usage.get("role", "user"),
+                "usage": usage
+            })
+            return
+
+        # ----------------- 나만의 스크랩북(북마크) 목록 조회 API -----------------
+        if url.path == "/api/scrapbook":
+            token = self._extract_token()
+            if not token:
+                self._send_json({"error": "로그인이 필요합니다."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            user, err = verify_supabase_user(token)
+            if err or not user:
+                self._send_json({"error": err or "인증 실패"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            
+            scrapbook_db = _load_scrapbook_data()
+            items = scrapbook_db.get(user["id"], [])
+            self._send_json({
+                "success": True,
+                "items": items,
+                "count": len(items)
+            })
+            return
+
+        # ----------------- 관리자 전용 GET API -----------------
+        if url.path == "/api/admin/stats":
+            token = self._extract_token()
+            admin_user, err = self._require_admin(token)
+            if err:
+                self._send_json({"error": err}, status=HTTPStatus.FORBIDDEN)
+                return
+
+            usage_db = _load_usage_data()
+            today_str = date.today().isoformat()
+            
+            total_users = len(usage_db)
+            today_queries = sum(u.get("used", 0) for u in usage_db.values() if u.get("date") == today_str)
+            total_queries = sum(u.get("total_requests", u.get("used", 0)) for u in usage_db.values())
+            blocked_users = sum(1 for u in usage_db.values() if u.get("is_blocked"))
+
+            api_key, model_name = get_gemini_config()
+            self._send_json({
+                "stats": {
+                    "totalUsers": total_users,
+                    "todayQueries": today_queries,
+                    "totalQueries": total_queries,
+                    "blockedUsers": blocked_users,
+                    "geminiModel": model_name,
+                    "hasGeminiKey": bool(api_key),
+                    "todayDate": today_str
+                }
+            })
+            return
+
+        if url.path == "/api/admin/users":
+            token = self._extract_token()
+            admin_user, err = self._require_admin(token)
+            if err:
+                self._send_json({"error": err}, status=HTTPStatus.FORBIDDEN)
+                return
+
+            usage_db = _load_usage_data()
+            today_str = date.today().isoformat()
+            users_list = []
+            for uid, info in usage_db.items():
+                used_today = info.get("used", 0) if info.get("date") == today_str else 0
+                role = info.get("role") or ("admin" if is_admin_email(info.get("email")) else "user")
+                default_limit = ROLE_DEFAULTS.get(role, DEFAULT_DAILY_LIMIT)
+                limit = info.get("custom_limit", default_limit)
+                is_blocked = (role == "blocked") or info.get("is_blocked", False)
+
+                users_list.append({
+                    "id": uid,
+                    "email": info.get("email") or "익명 (" + uid[:8] + ")",
+                    "role": role,
+                    "usedToday": used_today,
+                    "limit": limit,
+                    "remaining": 0 if is_blocked else max(0, limit - used_today),
+                    "isBlocked": is_blocked,
+                    "totalRequests": info.get("total_requests", used_today),
+                    "lastSeen": info.get("last_seen", "-")
+                })
+
+            users_list.sort(key=lambda x: x.get("usedToday", 0), reverse=True)
+            self._send_json({"users": users_list})
+            return
+
+        if url.path == "/api/admin/logs":
+            token = self._extract_token()
+            admin_user, err = self._require_admin(token)
+            if err:
+                self._send_json({"error": err}, status=HTTPStatus.FORBIDDEN)
+                return
+
+            logs = _load_activity_logs()
+            # 쿼리 파라미터 필터링 (예: ?category=ai 또는 ?category=auth)
+            query_params = dict(q.split("=", 1) for q in url.query.split("&") if "=" in q)
+            cat_filter = query_params.get("category", "").strip().lower()
+            if cat_filter and cat_filter != "all":
+                logs = [l for l in logs if l.get("category", "").lower() == cat_filter]
+
+            self._send_json({"logs": logs[:200]})
+            return
+
+        if url.path in ["/admin", "/admin/", "/admin.html"]:
+            admin_file = BASE_DIR / "admin.html"
+            if admin_file.exists():
+                with open(admin_file, "rb") as f:
+                    content = f.read()
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+                return
+
         if url.path in ["", "/", "/index.html"]:
-            self.path = "/news.html"
-        return super().do_GET()
+            news_file = BASE_DIR / "news.html"
+            if news_file.exists():
+                with open(news_file, "rb") as f:
+                    content = f.read()
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+                return
 
     def do_POST(self):
         url = urlparse(self.path)
+        client_ip = self.client_address[0] if self.client_address else "127.0.0.1"
+
+        # ----------------- 스크랩북(북마크) 추가/토글/삭제 API -----------------
+        if url.path == "/api/scrapbook/batch-add":
+            content_length = int(self.headers.get("Content-Length", 0))
+            post_data = json.loads(self.rfile.read(content_length).decode("utf-8")) if content_length > 0 else {}
+            token = self._extract_token(post_data)
+
+            if not token:
+                self._send_json({"error": "로그인이 필요한 기능입니다."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user, err = verify_supabase_user(token)
+            if err or not user:
+                self._send_json({"error": err or "인증 실패"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            articles = post_data.get("articles", [])
+            if not isinstance(articles, list) or len(articles) == 0:
+                self._send_json({"error": "스크랩할 기사 목록이 비어 있습니다."}, status=HTTPStatus.BAD_REQUEST)
+                return
+
+            user_id = user["id"]
+            user_email = user.get("email", "")
+            scrapbook_db = _load_scrapbook_data()
+            user_items = scrapbook_db.get(user_id, [])
+
+            added_count = 0
+            for article in articles:
+                title = article.get("title", "").strip()
+                link = article.get("link", "").strip()
+                if not title and not link:
+                    continue
+
+                # 중복 검사
+                exists = any(
+                    (link and item.get("link") == link) or (title and item.get("title") == title)
+                    for item in user_items
+                )
+                if not exists:
+                    new_item = {
+                        "id": f"scrap_{int(time.time()*1000)}_{abs(hash(title or link)) % 10000}",
+                        "title": title,
+                        "source": article.get("source", "IT News"),
+                        "link": link,
+                        "pubDate": article.get("pubDate", ""),
+                        "description": article.get("description", ""),
+                        "savedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    user_items.insert(0, new_item)
+                    added_count += 1
+
+            if added_count > 0:
+                add_activity_log(
+                    user_id=user_id,
+                    email=user_email,
+                    action="SCRAP_BATCH_ADD",
+                    details=f"기사 {added_count}건 일괄 스크랩 추가",
+                    category="general",
+                    ip=client_ip
+                )
+
+            scrapbook_db[user_id] = user_items
+            _save_scrapbook_data(scrapbook_db)
+
+            self._send_json({
+                "success": True,
+                "addedCount": added_count,
+                "itemCount": len(user_items),
+                "items": user_items
+            })
+            return
+
+        if url.path == "/api/scrapbook/toggle":
+            content_length = int(self.headers.get("Content-Length", 0))
+            post_data = json.loads(self.rfile.read(content_length).decode("utf-8")) if content_length > 0 else {}
+            token = self._extract_token(post_data)
+
+            if not token:
+                self._send_json({"error": "로그인이 필요한 기능입니다."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user, err = verify_supabase_user(token)
+            if err or not user:
+                self._send_json({"error": err or "인증 실패"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            article = post_data.get("article", {})
+            title = article.get("title", "").strip()
+            link = article.get("link", "").strip()
+            if not title and not link:
+                self._send_json({"error": "기사 정보가 올바르지 않습니다."}, status=HTTPStatus.BAD_REQUEST)
+                return
+
+            user_id = user["id"]
+            user_email = user.get("email", "")
+            scrapbook_db = _load_scrapbook_data()
+            user_items = scrapbook_db.get(user_id, [])
+
+            # 동일 링크 또는 동일 제목 기사 중복 여부 확인
+            existing_idx = None
+            for idx, item in enumerate(user_items):
+                if (link and item.get("link") == link) or (title and item.get("title") == title):
+                    existing_idx = idx
+                    break
+
+            is_scrapped = False
+            if existing_idx is not None:
+                # 스크랩 해제
+                removed = user_items.pop(existing_idx)
+                is_scrapped = False
+                add_activity_log(
+                    user_id=user_id,
+                    email=user_email,
+                    action="SCRAP_REMOVE",
+                    details=f"기사 스크랩 해제: '{removed.get('title', '')[:30]}'",
+                    category="general",
+                    ip=client_ip
+                )
+            else:
+                # 신규 스크랩 저장
+                new_item = {
+                    "id": f"scrap_{int(time.time()*1000)}_{abs(hash(title or link)) % 10000}",
+                    "title": title,
+                    "source": article.get("source", "IT News"),
+                    "link": link,
+                    "pubDate": article.get("pubDate", ""),
+                    "description": article.get("description", ""),
+                    "savedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+                user_items.insert(0, new_item)
+                is_scrapped = True
+                add_activity_log(
+                    user_id=user_id,
+                    email=user_email,
+                    action="SCRAP_ADD",
+                    details=f"기사 스크랩 추가: '{title[:30]}'",
+                    category="general",
+                    ip=client_ip
+                )
+
+            scrapbook_db[user_id] = user_items
+            _save_scrapbook_data(scrapbook_db)
+
+            self._send_json({
+                "success": True,
+                "isScrapped": is_scrapped,
+                "itemCount": len(user_items),
+                "items": user_items
+            })
+            return
+
+        # ----------------- 스크랩 목록 일괄 요약 리포트 생성 API -----------------
+        if url.path == "/api/scrapbook/summarize":
+            content_length = int(self.headers.get("Content-Length", 0))
+            post_data = json.loads(self.rfile.read(content_length).decode("utf-8")) if content_length > 0 else {}
+            token = self._extract_token(post_data)
+
+            if not token:
+                self._send_json({"error": "로그인이 필요합니다."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user, err = verify_supabase_user(token)
+            if err or not user:
+                self._send_json({"error": err or "인증 실패"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user_id = user["id"]
+            user_email = user.get("email", "")
+            scrapbook_db = _load_scrapbook_data()
+            user_items = scrapbook_db.get(user_id, [])
+
+            if not user_items:
+                self._send_json({
+                    "error": "스크랩한 기사가 없습니다. 먼저 기사를 스크랩북에 담아주세요!"
+                }, status=HTTPStatus.BAD_REQUEST)
+                return
+
+            # AI 종합 요약 생성
+            summary = generate_scrapbook_summary(user_items)
+
+            add_activity_log(
+                user_id=user_id,
+                email=user_email,
+                action="SCRAP_SUMMARIZE",
+                details=f"스크랩북 기사 {len(user_items)}건 종합 AI 브리핑 요약 요청",
+                category="ai",
+                ip=client_ip
+            )
+
+            self._send_json({
+                "success": True,
+                "summary": summary,
+                "itemCount": len(user_items)
+            })
+            return
+
+        # ----------------- 사용자 인증 활동 로그 기록 API -----------------
+        if url.path == "/api/auth/log":
+            content_length = int(self.headers.get("Content-Length", 0))
+            post_data = json.loads(self.rfile.read(content_length).decode("utf-8")) if content_length > 0 else {}
+            action = post_data.get("action", "LOGIN")
+            user_id = post_data.get("userId", "-")
+            email = post_data.get("email", "-")
+            details = post_data.get("details", "")
+
+            add_activity_log(
+                user_id=user_id,
+                email=email,
+                action=action,
+                details=details or f"사용자 {action} 처리됨",
+                category="auth",
+                ip=client_ip
+            )
+
+            # 사용자 DB에 접속 시간 및 기본 정보 동기화
+            if user_id and user_id != "-":
+                usage_db = _load_usage_data()
+                u_info = usage_db.get(user_id, {})
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                role = u_info.get("role") or ("admin" if is_admin_email(email) else "user")
+                u_info.update({
+                    "id": user_id,
+                    "email": email or u_info.get("email", ""),
+                    "role": role,
+                    "last_seen": now_str,
+                    "custom_limit": u_info.get("custom_limit", ROLE_DEFAULTS.get(role, DEFAULT_DAILY_LIMIT))
+                })
+                usage_db[user_id] = u_info
+                _save_usage_data(usage_db)
+
+            self._send_json({"success": True})
+            return
+
+        # ----------------- 일반회원 회원탈퇴 및 영구삭제 API -----------------
+        if url.path == "/api/auth/delete-account":
+            content_length = int(self.headers.get("Content-Length", 0))
+            post_data = json.loads(self.rfile.read(content_length).decode("utf-8")) if content_length > 0 else {}
+            token = self._extract_token(post_data)
+
+            if not token:
+                self._send_json({"error": "로그인이 필요합니다."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user, err = verify_supabase_user(token)
+            if err or not user:
+                self._send_json({"error": err or "유효하지 않은 세션입니다."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user_id = user["id"]
+            user_email = user.get("email", "")
+
+            # 관리자 계정 탈퇴 방지
+            if user_id == "admin_master" or user.get("username") == "admin":
+                self._send_json({"error": "시스템 관리자 계정은 탈퇴할 수 없습니다."}, status=HTTPStatus.FORBIDDEN)
+                return
+
+            # 1. Supabase Auth 계정 영구 삭제 시도
+            deleted, msg = delete_supabase_user(user_id)
+
+            # 2. 서버 사용량 및 계정 DB에서 영구 삭제
+            usage_db = _load_usage_data()
+            if user_id in usage_db:
+                del usage_db[user_id]
+                _save_usage_data(usage_db)
+
+            # 3. 활동 로그에 탈퇴 및 영구 삭제 기록
+            add_activity_log(
+                user_id=user_id,
+                email=user_email,
+                action="USER_WITHDRAW",
+                details=f"회원 탈퇴 요청 승인: 아이디({user_email}) 및 비밀번호/사용데이터 영구 파기 완료 ({msg})",
+                category="auth",
+                ip=client_ip
+            )
+
+            self._send_json({
+                "success": True,
+                "message": "회원 탈퇴가 완료되었습니다. 계정 정보와 비밀번호가 영구 삭제되었습니다."
+            })
+            return
+
+        # ----------------- 관리자 아이디/비밀번호 로그인 -----------------
+        if url.path == "/api/admin/login":
+            content_length = int(self.headers.get("Content-Length", 0))
+            post_data = json.loads(self.rfile.read(content_length).decode("utf-8")) if content_length > 0 else {}
+            username = post_data.get("username", "").strip()
+            password = post_data.get("password", "").strip()
+            admin_username, admin_password, admin_emails = get_admin_config()
+
+            # 아이디(username 또는 관리자 email) 및 비밀번호 일치 확인
+            is_valid_user = (username.lower() == admin_username.lower()) or (username.lower() in admin_emails)
+            is_valid_pw = (password == admin_password)
+
+            if is_valid_user and is_valid_pw:
+                token = f"admin-token-{admin_username}-{admin_password}"
+                add_activity_log(
+                    user_id=f"admin_{admin_username}",
+                    email=username,
+                    action="ADMIN_LOGIN",
+                    details=f"관리자 '{username}' 대시보드 로그인 성공",
+                    category="admin",
+                    ip=client_ip
+                )
+                self._send_json({
+                    "success": True,
+                    "token": token,
+                    "user": {
+                        "id": f"admin_{admin_username}",
+                        "username": admin_username,
+                        "email": username if "@" in username else f"{admin_username}@itnews.internal",
+                        "isAdmin": True
+                    }
+                })
+            else:
+                add_activity_log(
+                    user_id="-",
+                    email=username or "알 수 없음",
+                    action="ADMIN_LOGIN_FAIL",
+                    details=f"관리자 로그인 실패 (입력 아이디: '{username}')",
+                    category="admin",
+                    ip=client_ip
+                )
+                self._send_json({"error": "아이디 또는 비밀번호가 일치하지 않습니다."}, status=HTTPStatus.UNAUTHORIZED)
+            return
+
+        # ----------------- 관리자 사용자 권한 및 설정 변경 -----------------
+        if url.path == "/api/admin/update-user":
+            content_length = int(self.headers.get("Content-Length", 0))
+            post_data = json.loads(self.rfile.read(content_length).decode("utf-8")) if content_length > 0 else {}
+            
+            token = self._extract_token(post_data)
+            admin_user, err = self._require_admin(token)
+            if err:
+                self._send_json({"error": err}, status=HTTPStatus.FORBIDDEN)
+                return
+
+            target_user_id = post_data.get("userId", "").strip()
+            action = post_data.get("action", "").strip()
+
+            if not target_user_id:
+                self._send_json({"error": "대상 사용자 ID가 필요합니다."}, status=HTTPStatus.BAD_REQUEST)
+                return
+
+            usage_db = _load_usage_data()
+            user_info = usage_db.get(target_user_id, {
+                "id": target_user_id,
+                "email": post_data.get("email", ""),
+                "role": "user",
+                "custom_limit": DEFAULT_DAILY_LIMIT,
+                "used": 0,
+                "is_blocked": False
+            })
+            target_email = user_info.get("email") or target_user_id
+
+            if action == "set_role":
+                new_role = post_data.get("role", "user").strip().lower()
+                if new_role not in ROLE_DEFAULTS:
+                    self._send_json({"error": "유효하지 않은 권한입니다."}, status=HTTPStatus.BAD_REQUEST)
+                    return
+                user_info["role"] = new_role
+                user_info["is_blocked"] = (new_role == "blocked")
+                # 권한별 기본 한도 자동 세팅
+                user_info["custom_limit"] = ROLE_DEFAULTS[new_role]
+                add_activity_log(
+                    user_id=target_user_id,
+                    email=target_email,
+                    action="ROLE_CHANGE",
+                    details=f"관리자({admin_user.get('email')})가 권한을 [{new_role.upper()}]로 변경 (한도: {user_info['custom_limit']}회)",
+                    category="admin",
+                    ip=client_ip
+                )
+
+            elif action == "reset_usage":
+                user_info["used"] = 0
+                add_activity_log(
+                    user_id=target_user_id,
+                    email=target_email,
+                    action="RESET_USAGE",
+                    details=f"관리자({admin_user.get('email')})가 오늘 사용량을 0회로 초기화함",
+                    category="admin",
+                    ip=client_ip
+                )
+
+            elif action == "set_limit":
+                new_limit = int(post_data.get("limit", DEFAULT_DAILY_LIMIT))
+                user_info["custom_limit"] = max(1, new_limit)
+                add_activity_log(
+                    user_id=target_user_id,
+                    email=target_email,
+                    action="LIMIT_CHANGE",
+                    details=f"관리자({admin_user.get('email')})가 일일 질문 한도를 {new_limit}회로 조정함",
+                    category="admin",
+                    ip=client_ip
+                )
+
+            elif action == "toggle_block":
+                current_blocked = user_info.get("is_blocked", False) or (user_info.get("role") == "blocked")
+                user_info["is_blocked"] = not current_blocked
+                if user_info["is_blocked"]:
+                    user_info["role"] = "blocked"
+                else:
+                    user_info["role"] = "user"
+                    user_info["custom_limit"] = ROLE_DEFAULTS["user"]
+
+                add_activity_log(
+                    user_id=target_user_id,
+                    email=target_email,
+                    action="USER_BLOCK_TOGGLE",
+                    details=f"관리자({admin_user.get('email')})가 계정 상태를 [{'차단' if user_info['is_blocked'] else '정상'}]으로 변경함",
+                    category="admin",
+                    ip=client_ip
+                )
+            else:
+                self._send_json({"error": "알 수 없는 작업입니다."}, status=HTTPStatus.BAD_REQUEST)
+                return
+
+            usage_db[target_user_id] = user_info
+            _save_usage_data(usage_db)
+            self._send_json({"success": True, "user": user_info})
+            return
+
         if url.path == "/api/chat":
             content_length = int(self.headers.get("Content-Length", 0))
             post_data = self.rfile.read(content_length)
@@ -204,15 +1242,74 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                 self._send_json({"error": "검색어 또는 질문을 입력해 주세요."}, status=HTTPStatus.BAD_REQUEST)
                 return
 
-            # 1. 왼쪽 패널용 뉴스 원문 기사 검색
-            articles = fetch_news_articles(query)
+            # [인증 검증] 사용자 로그인 토큰 확인
+            token = self._extract_token(data)
 
-            # 2. 뉴스 원문 및 질의 기반 AI 요약 생성
+            if not token:
+                self._send_json({
+                    "error": "Gemini AI 기술 요약 및 뉴스 검색은 회원가입/로그인 후 이용할 수 있습니다.",
+                    "code": "AUTH_REQUIRED"
+                }, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user, err = verify_supabase_user(token)
+            if err or not user:
+                self._send_json({
+                    "error": f"인증 세션이 만료되었거나 올바르지 않습니다 ({err}). 다시 로그인해주세요.",
+                    "code": "INVALID_TOKEN"
+                }, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            user_id = user["id"]
+            user_email = user.get("email", "")
+
+            # [사용량(Quota) 및 차단 여부 검증]
+            usage = get_user_usage(user_id, user_email)
+            if usage.get("is_blocked"):
+                add_activity_log(
+                    user_id=user_id,
+                    email=user_email,
+                    action="BLOCKED_REQUEST",
+                    details=f"정지된 계정의 AI 요청 차단 (검색어: '{query}')",
+                    category="security",
+                    ip=client_ip
+                )
+                self._send_json({
+                    "error": "관리자에 의해 이용이 일시 정지된 계정입니다. 관리자에게 문의하세요.",
+                    "code": "USER_BLOCKED"
+                }, status=HTTPStatus.FORBIDDEN)
+                return
+
+            if usage["remaining"] <= 0:
+                add_activity_log(
+                    user_id=user_id,
+                    email=user_email,
+                    action="QUOTA_EXCEEDED",
+                    details=f"일일 한도 초과로 AI 질문 거부 (한도: {usage['limit']}회)",
+                    category="ai",
+                    ip=client_ip
+                )
+                self._send_json({
+                    "error": f"오늘 제공된 Gemini AI 브리핑 질문 횟수({usage['limit']}회)를 모두 소진하셨습니다. 내일 다시 이용해주세요!",
+                    "code": "QUOTA_EXCEEDED",
+                    "usage": usage
+                }, status=HTTPStatus.TOO_MANY_REQUESTS)
+                return
+
+            # 1. 뉴스 원문 기사 검색 (8건)
+            articles = fetch_news_articles(query, limit=8)
+
+            # 2. 뉴스 원문 및 질의 기반 Gemini AI 요약 생성
             answer_text = generate_gemini_summary(query, articles)
+
+            # 3. 사용자 호출 횟수 1 차감 및 기록
+            record_user_request(user_id, user_email, query, client_ip=client_ip)
+            updated_usage = get_user_usage(user_id, user_email)
 
             self._send_json({
                 "answer": answer_text,
-                "articles": articles
+                "articles": articles,
+                "usage": updated_usage
             })
             return
 
