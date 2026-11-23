@@ -3,7 +3,7 @@ import os
 import sys
 import time
 import threading
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -18,6 +18,21 @@ import xml.etree.ElementTree as ET
 BASE_DIR = Path(__file__).resolve().parent
 ENV_PATH = BASE_DIR / ".env"
 USAGE_DB_PATH = BASE_DIR / "user_usage.json"
+
+# 대한민국 표준시(KST, UTC+9) 타임존 설정
+KST = timezone(timedelta(hours=9))
+
+def now_kst():
+    """현재 한국 표준시(KST) datetime 객체 반환"""
+    return datetime.now(KST)
+
+def now_kst_str(fmt="%Y-%m-%d %H:%M:%S"):
+    """현재 한국 표준시(KST) 포맷팅 문자열 반환"""
+    return now_kst().strftime(fmt)
+
+def today_kst_str():
+    """현재 한국 표준시(KST) 기준 날짜 문자열(YYYY-MM-DD) 반환"""
+    return now_kst().date().isoformat()
 
 # 일일 사용자당 Gemini 호출 허용 횟수
 DEFAULT_DAILY_LIMIT = 10
@@ -145,8 +160,8 @@ def _load_activity_logs():
         return []
 
 def add_activity_log(user_id, email, action, details, category="general", ip="-"):
-    """사용자 활동 로그 추가 (최대 500건 보관)"""
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    """사용자 활동 로그 추가 (최대 500건 보관, KST 한국 표준시 기준)"""
+    now_str = now_kst_str()
     entry = {
         "id": f"act_{int(time.time()*1000)}",
         "timestamp": now_str,
@@ -168,9 +183,9 @@ def add_activity_log(user_id, email, action, details, category="general", ip="-"
 
 # ----------------- 일일 자동 보고서 생성 및 엑셀 내보내기 -----------------
 def generate_daily_report_data(target_date_str=None):
-    """지정된 날짜(기본 오늘)의 사용자 이용 기록을 집계 분석하여 일일 보고서 데이터 생성"""
+    """지정된 날짜(기본 오늘 KST)의 사용자 이용 기록을 집계 분석하여 일일 보고서 데이터 생성"""
     if not target_date_str:
-        target_date_str = date.today().isoformat()
+        target_date_str = today_kst_str()
 
     logs = _load_activity_logs()
     day_logs = [l for l in logs if str(l.get("timestamp", "")).startswith(target_date_str)]
@@ -213,7 +228,7 @@ def generate_daily_report_data(target_date_str=None):
 
     report = {
         "date": target_date_str,
-        "generatedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generatedAt": now_kst_str(),
         "totalActivities": len(day_logs),
         "activeUserCount": len(user_stats),
         "totalAiQueries": action_counts.get("CHAT_QUERY", 0),
@@ -236,7 +251,7 @@ def generate_daily_report_data(target_date_str=None):
 def get_or_generate_report(target_date_str=None):
     """해당 날짜 보고서 조회 (없으면 자동 생성)"""
     if not target_date_str:
-        target_date_str = date.today().isoformat()
+        target_date_str = today_kst_str()
     return generate_daily_report_data(target_date_str)
 
 def list_saved_reports():
@@ -252,7 +267,7 @@ def list_saved_reports():
         ts = str(l.get("timestamp", ""))
         if len(ts) >= 10:
             dates.add(ts[:10])
-    dates.add(date.today().isoformat())
+    dates.add(today_kst_str())
     return sorted(list(dates), reverse=True)
 
 def create_excel_report_bytes(report_data):
@@ -370,9 +385,9 @@ def _start_daily_report_background_scheduler():
     def _scheduler_loop():
         while True:
             try:
-                # 1시간마다 주기적으로 당일 및 전일 보고서 자동 갱신
-                today_str = date.today().isoformat()
-                yesterday_str = (date.today() - timedelta(days=1)).isoformat()
+                # 1시간마다 주기적으로 당일 및 전일 보고서 자동 갱신 (KST 기준)
+                today_str = today_kst_str()
+                yesterday_str = (now_kst().date() - timedelta(days=1)).isoformat()
                 generate_daily_report_data(today_str)
                 generate_daily_report_data(yesterday_str)
             except Exception as e:
@@ -383,8 +398,8 @@ def _start_daily_report_background_scheduler():
     t.start()
 
 def get_user_usage(user_id, email=None):
-    """오늘 날짜 기준 사용자의 사용 횟수, 잔여 한도 및 권한 조회"""
-    today_str = date.today().isoformat()
+    """오늘 날짜 기준(KST) 사용자의 사용 횟수, 잔여 한도 및 권한 조회"""
+    today_str = today_kst_str()
     data = _load_usage_data()
     user_info = data.get(user_id, {})
     
@@ -419,9 +434,9 @@ def get_user_usage(user_id, email=None):
     }
 
 def record_user_request(user_id, email, query, client_ip="-"):
-    """사용자 사용 횟수 1 증가 및 정보와 활동 로그 기록"""
-    today_str = date.today().isoformat()
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    """사용자 사용 횟수 1 증가 및 정보와 활동 로그 기록 (KST 기준)"""
+    today_str = today_kst_str()
+    now_str = now_kst_str()
     data = _load_usage_data()
     user_info = data.get(user_id, {})
 
@@ -850,7 +865,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
             return
 
         if url.path == "/health" or url.path == "/api/health":
-            self._send_json({"status": "ok", "service": "it-news-gemini", "time": datetime.now().isoformat()})
+            self._send_json({"status": "ok", "service": "it-news-gemini", "time": now_kst().isoformat()})
             return
 
         if url.path == "/api/config":
@@ -934,7 +949,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                 return
 
             usage_db = _load_usage_data()
-            today_str = date.today().isoformat()
+            today_str = today_kst_str()
             
             total_users = len(usage_db)
             today_queries = sum(u.get("used", 0) for u in usage_db.values() if u.get("date") == today_str)
@@ -963,7 +978,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                 return
 
             usage_db = _load_usage_data()
-            today_str = date.today().isoformat()
+            today_str = today_kst_str()
             users_list = []
             for uid, info in usage_db.items():
                 used_today = info.get("used", 0) if info.get("date") == today_str else 0
@@ -1014,7 +1029,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                 return
 
             query_params = dict(q.split("=", 1) for q in url.query.split("&") if "=" in q)
-            target_date = query_params.get("date", "").strip() or date.today().isoformat()
+            target_date = query_params.get("date", "").strip() or today_kst_str()
             
             report = get_or_generate_report(target_date)
             available_dates = list_saved_reports()
@@ -1033,7 +1048,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                 return
 
             query_params = dict(q.split("=", 1) for q in url.query.split("&") if "=" in q)
-            target_date = query_params.get("date", "").strip() or date.today().isoformat()
+            target_date = query_params.get("date", "").strip() or today_kst_str()
             report = get_or_generate_report(target_date)
 
             xlsx_data = create_excel_report_bytes(report)
@@ -1124,7 +1139,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                         "link": link,
                         "pubDate": article.get("pubDate", ""),
                         "description": article.get("description", ""),
-                        "savedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        "savedAt": now_kst_str()
                     }
                     user_items.insert(0, new_item)
                     added_count += 1
@@ -1205,7 +1220,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
                     "link": link,
                     "pubDate": article.get("pubDate", ""),
                     "description": article.get("description", ""),
-                    "savedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "savedAt": now_kst_str()
                 }
                 user_items.insert(0, new_item)
                 is_scrapped = True
@@ -1296,7 +1311,7 @@ class NewsChatHandler(SimpleHTTPRequestHandler):
             if user_id and user_id != "-":
                 usage_db = _load_usage_data()
                 u_info = usage_db.get(user_id, {})
-                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                now_str = now_kst_str()
                 role = u_info.get("role") or ("admin" if is_admin_email(email) else "user")
                 u_info.update({
                     "id": user_id,

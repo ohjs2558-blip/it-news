@@ -415,6 +415,120 @@
 
             loadUsers();
             loadLogs();
+            loadReportData();
+        }
+
+        // 일일 이용 분석 보고서 렌더링 및 엑셀 다운로드
+        let currentReportDate = '';
+        async function loadReportData(dateStr) {
+            if (!adminToken) return;
+            const selectEl = document.getElementById('report-date-select');
+            const tbody = document.getElementById('report-users-table-body');
+            const targetDate = dateStr || (selectEl ? selectEl.value : '');
+
+            try {
+                const url = targetDate 
+                    ? `/api/admin/reports?date=${encodeURIComponent(targetDate)}`
+                    : '/api/admin/reports';
+                
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                if (!res.ok) return;
+
+                const { report, availableDates } = await res.json();
+                if (!report) return;
+
+                currentReportDate = report.date;
+
+                // 일자 선택 셀렉트 박스 갱신 (선택 상태 유지)
+                if (selectEl && availableDates && availableDates.length > 0) {
+                    const currentVal = selectEl.value;
+                    selectEl.innerHTML = availableDates.map(d => `
+                        <option value="${d}" ${d === report.date ? 'selected' : ''}>${d} (${d === availableDates[0] ? '오늘' : '과거'})</option>
+                    `).join('');
+                }
+
+                // 핵심 지표 카드 갱신
+                document.getElementById('report-active-users').textContent = `${report.activeUserCount || 0}명`;
+                document.getElementById('report-total-activities').textContent = `${report.totalActivities || 0}건`;
+                document.getElementById('report-ai-queries').textContent = `${report.totalAiQueries || 0}건`;
+                document.getElementById('report-scraps').textContent = `${report.totalScraps || 0}건`;
+                document.getElementById('report-generated-time').textContent = `최근 집계: ${report.generatedAt || '-'}`;
+
+                // 사용자별 테이블 갱신
+                const users = report.users || [];
+                if (users.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-500 font-sans">해당 일자의 이용 활동 기록이 없습니다.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = users.map(u => `
+                    <tr class="hover:bg-dark-850/50 transition">
+                        <td class="py-2.5 px-4 font-mono">
+                            <div class="font-bold text-slate-200">${escapeHtml(u.email || '익명')}</div>
+                            <div class="text-[10px] text-slate-500 truncate max-w-[170px]">${escapeHtml(u.userId || '-')}</div>
+                        </td>
+                        <td class="py-2.5 px-4 text-sky-400 font-bold">${u.totalActivities || 0}회</td>
+                        <td class="py-2.5 px-4 text-indigo-300 font-semibold">${u.aiQueries || 0}회</td>
+                        <td class="py-2.5 px-4 text-amber-300 font-semibold">${u.scraps || 0}건</td>
+                        <td class="py-2.5 px-4 text-emerald-300 font-semibold">${u.logins || 0}회</td>
+                        <td class="py-2.5 px-4 text-slate-400 text-[11px]">${escapeHtml(u.lastAction || '-')}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error("보고서 로드 오류:", e);
+            }
+        }
+
+        // 일자 변경 이벤트
+        const reportDateSelect = document.getElementById('report-date-select');
+        if (reportDateSelect) {
+            reportDateSelect.addEventListener('change', (e) => {
+                loadReportData(e.target.value);
+            });
+        }
+
+        // 엑셀 다운로드 버튼 이벤트
+        const downloadExcelBtn = document.getElementById('download-excel-btn');
+        if (downloadExcelBtn) {
+            downloadExcelBtn.addEventListener('click', async () => {
+                if (!adminToken) return;
+                const selectEl = document.getElementById('report-date-select');
+                const targetDate = selectEl ? selectEl.value : currentReportDate;
+                
+                try {
+                    downloadExcelBtn.disabled = true;
+                    const originalText = downloadExcelBtn.innerHTML;
+                    downloadExcelBtn.innerHTML = `<span>다운로드 중...</span>`;
+
+                    const res = await fetch(`/api/admin/reports/export?date=${encodeURIComponent(targetDate)}`, {
+                        headers: { 'Authorization': `Bearer ${adminToken}` }
+                    });
+                    if (!res.ok) {
+                        alert('엑셀 파일 생성 중 오류가 발생했습니다.');
+                        return;
+                    }
+
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `ITNews_Daily_Report_${targetDate}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                } catch (e) {
+                    alert('다운로드 실패: ' + e.message);
+                } finally {
+                    downloadExcelBtn.disabled = false;
+                    downloadExcelBtn.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span>엑셀 다운로드 (.xlsx)</span>
+                    `;
+                }
+            });
         }
 
         // 사용자 목록 및 권한 렌더링
